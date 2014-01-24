@@ -64,6 +64,30 @@ var timeoutId;
 			// Live search of viewable items
 			wpMediaGrid.initLiveSearch();
 			
+			/**
+			 *  Media Tags Filtering
+			 *
+			 */
+			//Disable LiveSearch
+			$('.live-search a').on('click', function() {
+				if($(this).hasClass('active')) {
+					$(this).removeClass('active');
+					$(this).parent().removeClass('active');
+					$('.live-search input').attr('placeholder', 'Search viewable media');
+					filter = null;
+					wpMediaGrid.initLiveSearch(filter);
+					$(this).removeClass('dashicons-search').addClass('dashicons-tag');
+					$(this).attr('title', 'Filter by Media Tags');
+				}else {
+					$(this).addClass('active');
+					$(this).parent().addClass('active');
+					$('.live-search input').attr('placeholder', 'Search Media Tags');
+					$(this).removeClass('dashicons-tag').addClass('dashicons-search');
+					$(this).attr('title', 'Turn on live search');
+					filter = true;
+					wpMediaGrid.initLiveSearch(filter);
+				}
+			});
 			//Initial Display viewable items count
 			wpMediaGrid.viewCount();
 			
@@ -211,10 +235,15 @@ var timeoutId;
 			} );
 		},
 
-		initLiveSearch: function() {
-			$( '.media-grid' ).liveFilter('.live-search input', 'li', {
-				filterChildSelector: '.media-details'
-			});
+		initLiveSearch: function(filter) {
+			if(!filter) {
+				$( '.media-grid' ).liveFilter('.live-search input', 'li', {
+					filterChildSelector: '.media-details'
+				});
+			}else {
+				$( '.media-grid' ).liveFilter('.live-search input','',{ destroy: true });
+			}
+			
 		},
 
 		openModal: function( item ) {

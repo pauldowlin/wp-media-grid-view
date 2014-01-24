@@ -10,6 +10,7 @@
 (function($){
 	$.fn.liveFilter = function(inputEl, filterEl, options){
 		var defaults = {
+			destroy: null,
 			filterChildSelector: null,
 			filter: function(el, val){
 				return $(el).text().toUpperCase().indexOf(val.toUpperCase()) >= 0;
@@ -18,6 +19,12 @@
 			after: function(){}
 		};
 		var options = $.extend(defaults, options);
+		
+		// New code to accept destroy method
+		if(options.destroy) {
+			$(inputEl).unbind();
+			return;
+		}
 		
 		var el = $(this).find(filterEl);
 		if (options.filterChildSelector) el = el.find(options.filterChildSelector);
