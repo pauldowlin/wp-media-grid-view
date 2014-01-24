@@ -118,7 +118,7 @@ var tagSlug;
 					$(this).removeClass('dashicons-search').addClass('dashicons-tag');
 					$(this).attr('title', 'Filter by Media Tags');
 					//make sure that our Moar Media link is active
-					$('.more-media').removeClass('loading').html('Get M
+					$('.more-media').removeClass('loading').html('Get Moar!');
 				}else {
 					$(this).addClass('active');
 					$(this).parent().addClass('active');
@@ -498,6 +498,7 @@ var tagSlug;
 								return this.value == textholder;
 							});
 						if(textholder == '') {
+							wpMediaGrid.sendForAll();
 							return;
 						}
 						if(pdArray.length > 0) {
@@ -537,6 +538,31 @@ var tagSlug;
 				});
 			}
 		},
+		//Ajax request for all media items
+		sendForAll: function() {
+			var overlay = $('<div id="media-overlay"></div>');
+			overlay.appendTo($('#media-library').attr('display', 'block'));
+			tagSlug = null;
+			$.post( pdAjax.ajaxurl,
+			{
+				action : 'pd_all_items',
+				
+				customDeleteNonce : pdAjax.customDeleteNonce
+			}).done(function(data) {
+				$( '.media-grid li' ).remove();
+				$( '.media-grid' ).append( data );
+				wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
+				wpMediaGrid.totalCount();
+				wpMediaGrid.viewCount();
+				overlay.remove();
+				//revert .more-media link back to href=1
+				$('.more-media').removeClass('loading').attr('href', '1');
+				
+			}).fail(function() {
+				alert("We're sorry but there seems to be something wrong with the server. Please try again later.");
+			});
+			
+		}
 	}
 
 	$(document).ready(function($){ wpMediaGrid.init(); });
