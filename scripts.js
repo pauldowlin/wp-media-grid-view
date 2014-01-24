@@ -86,6 +86,7 @@ var timeoutId;
 					$(this).attr('title', 'Turn on live search');
 					filter = true;
 					wpMediaGrid.initLiveSearch(filter);
+					wpMediaGrid.sendAjaxTags();
 				}
 			});
 			//Initial Display viewable items count
@@ -442,7 +443,57 @@ var timeoutId;
 			}
 			
 			
-		}
+		},
+		
+		// Send Media Tag via AJAX to upload.php?grid and display returned items
+		sendAjaxTags: function() {
+			var textBox = $('.live-search input');
+			if(textBox.parent().hasClass('active')) {
+				textBox.on('keypress', function(event) {
+					if(event.which == '13'){
+						var textholder = $(this).val();
+							// pdAjax.tagsList comes from wp_localize_script in php file
+							pdArray = $(pdAjax.tagsList).filter(function(){
+								return this.value == textholder;
+							});
+						if(textholder == '') {
+							return;
+						}
+						if(pdArray.length > 0) {
+							var tagValue = pdArray[0]['value'],
+								overlay = $('<div id="media-overlay"></div>');
+							// global var
+							tagSlug = pdArray[0]['slug'];
+							overlay.appendTo($('#media-library').attr('display', 'block'));
+							//Actually send it!
+							$.post( pdAjax.ajaxurl,
+							{
+								//action
+								action : 'pd_custom_header',
+								//add parameters
+								tagSlug : tagSlug,
+								//send nonce along with everything else
+								customDeleteNonce : pdAjax.customDeleteNonce
+							}).done(function( data ) {
+								if(data) {
+									$( '.media-grid li' ).remove();
+									$( '.media-grid' ).append( data );
+									wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
+									wpMediaGrid.totalCount();
+									wpMediaGrid.viewCount();
+									overlay.remove();
+								}
+							}).fail(function(error) {
+								alert('We are sorry. Something went wrong.  Server responded with: ' + error);
+							});
+						}else {
+							//Getting ready for autocomplete so there won't be an else situation
+							console.log('sendAjaxsTags:  No Match!!');
+						}
+					}
+				});
+			}
+		},
 	}
 
 	$(document).ready(function($){ wpMediaGrid.init(); });

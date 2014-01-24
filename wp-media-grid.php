@@ -185,6 +185,7 @@ class WP_Media_Grid {
 					<input type="text" data-slider="true" data-slider-step="0.1" data-slider-snap="false" value="1" data-slider-range="0.8,2.2">
 				</li>
 				<li class="live-search">
+					<a class="dashicons dashicons-tag" title="Filter by media tags" href="#">&nbsp;</a>
 					<input type="search" placeholder="Search viewable media&hellip;">
 				</li>
 				<li class="media-select-all"><input type="checkbox" name="media-select-all" value=""><span>Check All</span></li>
@@ -348,8 +349,24 @@ class WP_Media_Grid {
 	 */
 	public function enqueue() {
 		// redo wp-media-grid enqueueing so we can localize with our variables
+		// First lets find out if we are dealing with Enhanced Library plugin or Media Tags plugin
+		if(is_plugin_active('media-tags/media_tags.php')){
+			$pd_taxonomy = 'media-tags';
+		} else {
+			$pd_taxonomy = 'post_tag';
+		}
+		$terms = get_terms($pd_taxonomy);
+		// Now place both label and slug into array to be passed to jQuery on page load 
+		foreach($terms as $term) {
+			$tmp = array();
+			//array_push($tmp, $term->slug, $term->name); 
+			$tmp['slug'] = $term->slug;
+			$tmp['value'] = $term->name;
+			$tagsList[] = $tmp;
+			
+		}
 		wp_register_script( 'wp-media-grid', plugins_url( 'scripts.js', __FILE__ ), array( 'jquery' ) );
-		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'),));
+		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'), 'tagsList' => $tagsList));
 		// ----------------------------------------------------------------------
 		wp_enqueue_script( 'wp-media-grid');
 		wp_enqueue_style( 'wp-media-grid', plugins_url( 'styles.css', __FILE__ ) );
@@ -396,6 +413,48 @@ function pd_custom_delete() {
 	die();
 }
 add_action('wp_ajax_pd_custom_delete', 'pd_custom_delete');
+function pd_custom_header() {
+	$nonce = $_POST['customDeleteNonce'];
+	//Checking nonce
+	if(!wp_verify_nonce($nonce, 'pdajax-custom-delete-nonce')) {
+		die('Not allowed here!');
+	}
+	//Only if user has sufficient permissions
+	if(current_user_can( 'edit_posts' )) {
+		$tagSlug = $_POST['tagSlug'];
+		$next_page = (int) $_POST['next_page'];
+		if(!$next_page){
+			$next_page = 1;
+		}
+		//find the taxonomy term to use
+		if(is_plugin_active('media-tags/media_tags.php')){
+			$pd_taxonomy = 'media-tags';
+		} else {
+			$pd_taxonomy = 'post_tag';
+		}
+		//set the args
+		$args = array(
+			'post_type' => 'attachment',
+			'tax_query' => array(
+					array(
+							'taxonomy' => $pd_taxonomy,
+							'field' => 'slug',
+							'terms' => $tagSlug
+					)
+			),
+			'post_status' => 'inherit',
+			'posts_per_page' => 25,
+			'paged' => $next_page,
+			'post_mime_type' => 'image'
+			
+		);
+		$items = new WP_Query( $args );
+		WP_Media_Grid::renderMediaItems( $items->posts );
+		//echo $pd_taxonomy;
+	}
+	die();
+}
+add_action('wp_ajax_pd_custom_header', 'pd_custom_header');
 /**
  * Initialize
  */
