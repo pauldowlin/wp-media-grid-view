@@ -1,5 +1,6 @@
 var wpMediaGrid;
 var timeoutId;
+var tagSlug;
 
 (function($) {
 	wpMediaGrid = {
@@ -19,30 +20,68 @@ var timeoutId;
 				filter = $( '.media-nav' ).data( 'filter' );
 				tag = $( '.media-nav' ).data( 'tag' );
 				link.addClass( 'loading' ).html( 'Loading more items&hellip;' );
-
-				$.get( url, {
-					media_action: 'more',
-					next_page: next_page,
-					filter: filter,
-					tag: tag
-				} ).done( function(data) {
-					if ( data ) {
-						$( '.media-grid' ).append( data );
-						wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
-						link.attr( 'href', next_page.toString() );
-						link.removeClass( 'loading' ).html('Get moar!');
-					} else {
-						link.remove();
-					}
-					wpMediaGrid.initLiveSearch();
-					wpMediaGrid.viewCount();
-					if(  $('.media-select-all input').is(":checked") ) {
-						if( confirm( 'Select next page worth of items?' ) ) {
-							wpMediaGrid.toggleSelectAll();
+				//Default ajax action
+				// ** Just sayin' -
+				// - shouldn't we be using $.Post then send to admin-ajax.php with nonce?
+				
+				// For now just test to see if Tag search is on and if so, skip
+				if(!tagSlug) {
+					$.get( url, {
+						media_action: 'more',
+						next_page: next_page,
+						filter: filter,
+						tag: tag
+					} ).done( function(data) {
+						if ( data ) {
+							$( '.media-grid' ).append( data );
+							wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
+							link.attr( 'href', next_page.toString() );
+							link.removeClass( 'loading' ).html('Get moar!');
+						} else {
+							// Don't remove!  We need that link later on
+							//link.remove();
 						}
-					}
+						// added double check to see if tags search is still on
+						if(!$('.live-search').hasClass('active')) {
+							wpMediaGrid.initLiveSearch();
+						}
+						wpMediaGrid.viewCount();
+						if(  $('.media-select-all input').is(":checked") ) {
+							if( confirm( 'Select next page worth of items?' ) ) {
+								wpMediaGrid.toggleSelectAll();
+							}
+						}
+						
+					});
+				}
+				// If Tag search is active than call pd_custom_header for query and paging
+				if(tagSlug) {
+					$.post(pdAjax.ajaxurl,
+					{
+						action : 'pd_custom_header',
+						//parameters
+						tagSlug : tagSlug,
+						next_page : next_page,
+						customDeleteNonce : pdAjax.customDeleteNonce
+					}).done(function(data) {
+						if(data) {
+							$( '.media-grid' ).append( data );
+							wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
+							link.attr( 'href', next_page.toString() );
+							link.removeClass( 'loading' ).html('Get moar!');
+						} else {
+							//Don't remove!  We need that link later on
+							//link.remove();
+						}
+						wpMediaGrid.viewCount();
+						if(  $('.media-select-all input').is(":checked") ) {
+							if( confirm( 'Select next page worth of items?' ) ) {
+								wpMediaGrid.toggleSelectAll();
+							}
+						}
+					});
 					
-				});
+				}
 			});
 
 			// Inifite Scroll
@@ -78,6 +117,8 @@ var timeoutId;
 					wpMediaGrid.initLiveSearch(filter);
 					$(this).removeClass('dashicons-search').addClass('dashicons-tag');
 					$(this).attr('title', 'Filter by Media Tags');
+					//make sure that our Moar Media link is active
+					$('.more-media').removeClass('loading').html('Get M
 				}else {
 					$(this).addClass('active');
 					$(this).parent().addClass('active');
@@ -482,6 +523,8 @@ var timeoutId;
 									wpMediaGrid.totalCount();
 									wpMediaGrid.viewCount();
 									overlay.remove();
+									//revert .more-media link back to href=1
+									$('.more-media').removeClass('loading').attr('href', '1');
 								}
 							}).fail(function(error) {
 								alert('We are sorry. Something went wrong.  Server responded with: ' + error);
