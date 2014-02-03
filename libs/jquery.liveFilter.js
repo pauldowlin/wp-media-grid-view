@@ -19,17 +19,21 @@
 			after: function(){}
 		};
 		var options = $.extend(defaults, options);
+		var filter = options.filter;
+		var el = $(this).find(filterEl);
+		if (options.filterChildSelector) el = el.find(options.filterChildSelector);
 		
 		// New code to accept destroy method
 		if(options.destroy) {
+			var contains = el.filter(function(){
+				return filter(this, $(inputEl).val());
+			});
+			contains.show();
 			$(inputEl).unbind();
 			return;
 		}
 		
-		var el = $(this).find(filterEl);
-		if (options.filterChildSelector) el = el.find(options.filterChildSelector);
 
-		var filter = options.filter;
 		$(inputEl).keyup(function(){
 			var val = $(this).val();
 			var contains = el.filter(function(){

@@ -31,17 +31,27 @@ body.blurred #media-library .media-grid {
 
 #media-library ul.media-nav li.media-select-all {
 	float: right;
-	margin: 5px 15px 0 5px;
 	width: 7em;
 }
-#media-library .dashicons{
+#media-library .media-nav .dashicons{
 	margin: 0;
 	vertical-align: middle;
-	position: relative;
-		top: -2px;
+	position: absolute;
+		top: -15px;
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
 }
+	#media-library .dashicons.dashicons-visibility {
+		right: 10px;
+	}
+	#media-library .dashicons.dashicons-tag {
+		right: 35px;
+	}
+	#media-library .dashicons.dashicons-search {
+		right: 60px;
+	}
 #total-view-items  {
-	padding: 10px 0 0 0;
 }
 #total-items {
 	float: left;
@@ -83,20 +93,17 @@ body.blurred #media-library .media-grid {
 		top: -2px;
 }
 
-
-
 ul.media-nav {
-	/*
-	position: absolute;
-		top: 0;
-		right: 0;
-	*/	
-	overflow: hidden;
-	margin: 0
+	//overflow: hidden;
+	margin: 0;
+	height: 30px;
 }
 	ul.media-nav li {
 		display: inline-block;
+		vertical-align: middle;
+		line-height: 30px;
 		margin-right: 10px;
+		margin-bottom: 0;
 	}
 	ul.media-nav li:last-child {
 		margin: 0 0 0 35px;
@@ -124,8 +131,18 @@ ul.media-nav {
 
 .live-search {
 	float: right;
-	margin-right: 10px;
-}
+	vertical-align: middle;
+	line-height: 30px;
+	position: relative;
+	}
+	.live-search a {
+		color: #ccc;
+		cursor: pointer;
+	}
+	.live-search a.active {
+		color: #2ea2cc;
+
+	}
 
 .more-media {
 	visibility: hidden;
@@ -695,6 +712,7 @@ dd.photo-uploader {
 		.star-rating .star b {
 			display: none;
 		}
+
 #media-overlay {
 	position: fixed;
     top: 200px;
@@ -707,4 +725,30 @@ dd.photo-uploader {
     -khtml-opacity: 0.5;
     opacity: 0.5;
     z-index: 10000;
+}
+body #media-library #message {
+	display: none;
+	margin: 5px 0 30px;
+}
+/* Autocomplete styling */
+html body ul.ui-autocomplete{
+	background-color: #e3ebbc;
+	padding: 5px;
+	border-radius: 5px;
+}
+body .ui-autocomplete li a.ui-state-focus {
+	background: #c1ce84;
+	cursor: pointer;
+	border:  none;
+	color: inherit;
+	font-weight: normal;
+}
+body ul.ui-widget-content {
+	border: none;
+	background: transparent none 0% 0% repeat;
+	color: inherit;
+}
+/*  Trying to override dashicons-trash icon which is broken in latest wordpress update (3.8.1) */
+#media-library .selected-delete .dashicons-trash:before {
+	content: "\f182";
 }

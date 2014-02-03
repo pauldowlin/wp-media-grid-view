@@ -152,7 +152,12 @@ class WP_Media_Grid {
 		$items = new WP_Query( $args );
 		// Admin header
 		require_once( ABSPATH . 'wp-admin/admin-header.php' );
-	?>
+		/**
+		 * Ajax Messages 
+		 *    -->uses javascript to load and populate
+		 */
+		?>
+		<div id="message" class="updated"></div>
 		<div id="media-library" class="wrap">
 			<h2>Media Library
 				<?php if ( current_user_can( 'upload_files' ) ) { ?>
@@ -185,22 +190,19 @@ class WP_Media_Grid {
 					<input type="text" data-slider="true" data-slider-step="0.1" data-slider-snap="false" value="1" data-slider-range="0.8,2.2">
 				</li>
 				<li class="live-search">
-					<a class="dashicons dashicons-tag" title="Filter by media tags" href="#">&nbsp;</a>
-					<input type="search" placeholder="Search viewable media&hellip;">
+					<input type="search" id="media-grid-search" placeholder="Search viewable media&hellip;">
 				</li>
 				<li class="media-select-all"><input type="checkbox" name="media-select-all" value=""><span>Check All</span></li>
 				<li id="total-view-items">
 					<div id="total-items"><?php 
 						$found = $items->found_posts;
-						echo  '<span class="found">' . $found . '</span>'; if($found==1){?>item<?php }else{ ?>items<?php } ?></div>
+						echo  '<span class="found">' . $found . '</span>'; ?>total</div>
 					<div id="view-items"></div>
 				</li>
 			</ul>
-
 			<ol class="media-grid">
 				<?php self::renderMediaItems( $items->posts ); ?>
 			</ol>
-
 			<div id="add-media">
 				<p>Drop media here to upload, or <button>Browse</button> your computer.</p>				
 			</div>
@@ -208,11 +210,9 @@ class WP_Media_Grid {
 				<div class="selected-meta">
 					<h2 class="selected-count"><strong>0</strong> items selected / &nbsp;&nbsp;&nbsp;Actions:</h2>
 					<ul class="selected-media-options inactive">
-						<li><a class="selected-delete" href="#"><div class="dashicons dashicons-trash"></div></a></li>
-						<li><a class="selected-tag" href="#"><div class="dashicons dashicons-tag"></div></a></li>
+						<li><a class="selected-delete" title="Delete selected items" href="#"><div class="dashicons dashicons-trash"></div></a></li>
+						<li><a class="selected-tag" title="Tag selected items" href="#"><div class="dashicons dashicons-tag"></div></a></li>
 						<li><a class="selected-unselect" href="#"><button type="button" title="Clear selection" class="bttn_clear_all">Clear selection</button></a></li>
-
-
 					</ul>
 				</div>
 				<?php /* save for later?
@@ -248,8 +248,8 @@ class WP_Media_Grid {
 	}
 
 	public function renderMediaItems( $items ) {
-		foreach ( $items as $item) : ?>
-			<?php
+		foreach ( $items as $item) : 
+			
 				switch ($item->post_mime_type) {
 					case 'image/jpeg':
 					case 'image/png':
@@ -367,14 +367,23 @@ class WP_Media_Grid {
 		}
 		wp_register_script( 'wp-media-grid', plugins_url( 'scripts.js', __FILE__ ), array( 'jquery' ) );
 		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'), 'tagsList' => $tagsList));
-		// ----------------------------------------------------------------------
+		// -----------------------------------------------------------------------------------------------
 		wp_enqueue_script( 'wp-media-grid');
 		wp_enqueue_style( 'wp-media-grid', plugins_url( 'styles.css', __FILE__ ) );
 
 		wp_enqueue_script( 'media-size-slider', plugins_url( 'libs/simple-slider.min.js', __FILE__ ) );
 		wp_enqueue_style( 'media-size-slider', plugins_url( 'libs/simple-slider.css', __FILE__ ) );
 
-		wp_enqueue_script( 'live-filter', plugins_url( 'libs/jquery.liveFilter.js', __FILE__ ) );
+		wp_enqueue_script( 'live-filter', plugins_url( 'libs/jquery.liveFilter.js', __FILE__ ), array( 'jquery' ) );
+		
+		// Filter our results with score
+		wp_enqueue_script( 'qs-score', plugins_url( 'libs/qs_score.js', __FILE__ ), array( 'jquery' ) );
+		
+		//Make us spin!!
+		wp_enqueue_script( 'activity-indicator', plugins_url('libs/activity/jquery.activity-indicator.min.js', __FILE__), array( 'jquery' ) );
+		
+		//Jquery AutoComplete
+		wp_enqueue_script('jquery-ui-autocomplete');
 	}
 	
 	
@@ -450,7 +459,14 @@ function pd_custom_header() {
 		);
 		$items = new WP_Query( $args );
 		WP_Media_Grid::renderMediaItems( $items->posts );
-		//echo $pd_taxonomy;
+		/**
+		 *  I don't understand this one:  If I try to include a variable, for total number of items
+		 * returned from query, it throws an error.  If I try to json_encode renderMediaItems it 
+		 * throws an error.  I think renderMediaItems is the culprit but I don't really know where 
+		 * to begin with this?
+		 * My solution is to return a hidden div that jquery then looks for to update the total # of items
+		 */
+		echo '<div id="ajax-foundAttach" data-id="' . $items->found_posts . '"></div>';
 	}
 	die();
 }
@@ -474,7 +490,14 @@ function pd_all_items() {
 		);
 		$items = new WP_Query( $args );
 		WP_Media_Grid::renderMediaItems( $items->posts );
-		//echo $items;
+		/**
+		 *  I don't understand this one:  If I try to include a variable, for total number of items
+		 * returned from query, it throws an error.  If I try to json_encode renderMediaItems it 
+		 * throws an error.  I think renderMediaItems is the culprit but I don't really know where 
+		 * to begin with this?
+		 * My solution is to return a hidden div that jquery then looks for to update the total # of items
+		 */
+		echo '<div id="ajax-foundAttach" data-id="' . $items->found_posts . '"></div>';
 	}
 	die();
 }
