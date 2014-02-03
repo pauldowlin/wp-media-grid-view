@@ -249,7 +249,7 @@ var mySearch;  //tells search box we reset the query
 			}else {
 				$('#media-grid-search').autocomplete({
 					minLength: 0,
-					//autoFocus: true,
+					autoFocus: true,
 					position: {my: 'top', at: 'bottom+10'},
 					source: function(request, response) {
 						var source = pdAjax.tagsList;
@@ -267,6 +267,9 @@ var mySearch;  //tells search box we reset the query
 						$('#media-grid-search').val(ui.item.value);
 						return false;
 						}
+					},
+					change: function(event, ui) {
+						$('#media-grid-search').val('');
 					}
 					
 				});
