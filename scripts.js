@@ -297,6 +297,7 @@ var mySearch;  //tells search box we reset the query
 					if($('.media-select-all input[type=checkbox]').is(':checked')){
 						$('.media-select-all input[type=checkbox]').trigger('click');
 					}
+					wpMediaGrid.toggleSelectAll(true);
 					//disable things so no inadvertant clicking or selecting
 					wpMediaGrid.disableMedia(true);
 					//send call via Ajax for new media items based on tags
@@ -541,9 +542,9 @@ var mySearch;  //tells search box we reset the query
 		},
 		
 		//Select all viewable items on page
-		toggleSelectAll: function() {
+		toggleSelectAll: function(selected) {
 			//Check to see if things are already checked
-			if(  $('.media-select-all input').is(":checked") ) {
+			if(  $('.media-select-all input').is(":checked") && !selected) {
 				$( '.media-grid .media-item').each(function() {
 					var id = $(this).data('id'),
 						details = $(this).find( '.media-details' ),
