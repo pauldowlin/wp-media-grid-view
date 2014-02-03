@@ -151,6 +151,7 @@ ul.media-nav {
 .media-grid {
 	margin: 30px 0 200px 0;
 	list-style: none;
+	position: relative;
 }
 .media-grid:after {
 	content: ".";
@@ -714,9 +715,9 @@ dd.photo-uploader {
 		}
 
 #media-overlay {
-	position: fixed;
-    top: 200px;
-    left: 180px;
+	position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     background-color: #fff;
@@ -724,7 +725,7 @@ dd.photo-uploader {
     -moz-opacity:0.5;
     -khtml-opacity: 0.5;
     opacity: 0.5;
-    z-index: 10000;
+    z-index: 100;
 }
 body #media-library #message {
 	display: none;

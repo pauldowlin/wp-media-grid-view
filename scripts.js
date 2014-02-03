@@ -308,7 +308,7 @@ var mySearch;  //tells search box we reset the query
 							var overlay = $('<div id="media-overlay"></div>');
 							// global var
 							tagSlug = myTag;
-							overlay.appendTo($('#media-library').attr('display', 'block'));
+							overlay.appendTo($('.media-grid').attr('display', 'block'));
 							$('.media-grid').find('#ajax-foundAttach').remove();
 							//Actually send it!
 							$.post( pdAjax.ajaxurl,
@@ -635,7 +635,7 @@ var mySearch;  //tells search box we reset the query
 		//Ajax request for all media items
 		sendForAll: function() {
 			var overlay = $('<div id="media-overlay"></div>');
-			overlay.appendTo($('#media-library').attr('display', 'block'));
+			overlay.appendTo($('.media-grid').attr('display', 'block'));
 			tagSlug = null;
 			$('.media-grid').find('#ajax-foundAttach').remove();
 			$.post( pdAjax.ajaxurl,
