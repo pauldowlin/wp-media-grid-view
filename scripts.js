@@ -2,7 +2,7 @@ var wpMediaGrid;
 var timeoutId;
 var tagSlug;
 var filter;
-var mySearch;  //tells search box we reset the query
+var mySearch=true;  //tells search box we reset the query
 
 (function($) {
 	wpMediaGrid = {
@@ -246,10 +246,11 @@ var mySearch;  //tells search box we reset the query
 				if( $('#media-grid-search').data('ui-autocomplete') ) {
 				$('#media-grid-search').autocomplete('destroy');
 				}
+				$('#media-library').off('input', '#media-grid-search');
 			}else {
 				$('#media-grid-search').autocomplete({
 					minLength: 0,
-					autoFocus: true,
+					//autoFocus: true,
 					position: {my: 'top', at: 'bottom+10'},
 					source: function(request, response) {
 						var source = pdAjax.tagsList;
@@ -283,6 +284,16 @@ var mySearch;  //tells search box we reset the query
 						wpMediaGrid.sendForAll();
 						$(this).blur();
 						}
+					}
+				});
+				//autofocus only after keypress
+				$('#media-library').on('input', '#media-grid-search',function(e) {
+					console.log('Input check fired: ' + this.value.length);
+					if(this.value.length == 0) {
+					
+						$( this ).autocomplete( "option", "autoFocus", false );
+					}else {
+						$( this ).autocomplete( "option", "autoFocus", true );
 					}
 				});
 				//Open menu when input is selected
@@ -370,6 +381,7 @@ var mySearch;  //tells search box we reset the query
 					filter = true;
 					wpMediaGrid.initLiveSearch(filter);
 					wpMediaGrid.initTagSearch(null);
+					$('.live-search input').focus();
 					break;
 				case ('dashicons dashicons-visibility'):
 					$(this).addClass('active');
@@ -377,6 +389,7 @@ var mySearch;  //tells search box we reset the query
 					filter = null;
 					wpMediaGrid.initLiveSearch(filter);
 					wpMediaGrid.initTagSearch(null);
+					$('.live-search input').focus();
 					break;
 			}
 		},
