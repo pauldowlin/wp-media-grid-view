@@ -2,7 +2,8 @@ var wpMediaGrid;
 var timeoutId;
 var tagSlug;
 var filter;
-var mySearch=true;  //tells search box we reset the query
+mySearch=true;  //tells search box we reset the query
+sel=0;  //initializes check all
 
 (function($) {
 	wpMediaGrid = {
@@ -121,13 +122,13 @@ var mySearch=true;  //tells search box we reset the query
 			wpMediaGrid.initLiveSearch();
 			
 			//Enable Tag search :: disable live and full searches
-			$('#media-library').on('click', '.dashicons-tag', wpMediaGrid.tagSearchIcon);
+			$('.media-nav').on('click', '.dashicons-tag', wpMediaGrid.tagSearchIcon);
 			
 			//Enable Full search :: disable live and tag searches
-			$('#media-library').on('click', '.dashicons-search', wpMediaGrid.tagSearchIcon);
+			$('.media-nav').on('click', '.dashicons-search', wpMediaGrid.tagSearchIcon);
 			
 			//Enable Live search :: disable tag and full searches
-			$('#media-library').on('click', '.dashicons-visibility', wpMediaGrid.tagSearchIcon);
+			$('.media-nav').on('click', '.dashicons-visibility', wpMediaGrid.tagSearchIcon);
 			
 			//----------------------------------------------------------------------------- end search input
 			
@@ -555,9 +556,9 @@ var mySearch=true;  //tells search box we reset the query
 		},
 		
 		//Select all viewable items on page
-		toggleSelectAll: function(selected) {
+		toggleSelectAll: function() {
 			//Check to see if things are already checked
-			if(  $('.media-select-all input').is(":checked") && !selected) {
+			if(  $('.media-select-all input').is(":checked") && !sel) {
 				$( '.media-grid .media-item').each(function() {
 					var id = $(this).data('id'),
 						details = $(this).find( '.media-details' ),
