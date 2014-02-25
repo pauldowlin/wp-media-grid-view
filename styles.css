@@ -54,17 +54,27 @@ body.blurred #media-library .media-grid {
 #total-view-items  {
 }
 #total-items {
-	float: left;
+	position: absolute;
+	top: 30px;
+	right: 85px;
 	color: #999;
 	font-size: 10px;
+	line-height: normal;
 }
 #total-items span {
 	font-size: 13px;
 	margin-right: 2px;
 }
+#total-items.active {
+	cursor: pointer;
+	color: #0074a2;
+}
 #view-items {
-	float: left;
+	position: absolute;
+	top: 30px;
+	right: 10px;
 	color: #999;
+	line-height: normal;
 }
 #view-items span{
 	font-size: 10px;
@@ -97,6 +107,7 @@ ul.media-nav {
 	//overflow: hidden;
 	margin: 0;
 	height: 30px;
+	position: relative;
 }
 	ul.media-nav li {
 		display: inline-block;
@@ -148,10 +159,17 @@ ul.media-nav {
 	visibility: hidden;
 }
 
-.media-grid {
-	margin: 30px 0 200px 0;
-	list-style: none;
+#mgwrap{
+	margin: 10px 0 200px 0;
 	position: relative;
+	padding: 2em 0 0 0;
+}
+.media-grid {
+	list-style: none;
+	//position: relative;
+	background: #d3d3d3;
+	border-radius: 4px;
+	margin: 0;
 }
 .media-grid:after {
 	content: ".";
@@ -162,6 +180,9 @@ ul.media-nav {
 	height: 0;
 }
 
+.media-grid ol {
+	margin-left: .5em;
+}
 #add-media {
 	display: none;
 	width: 222px;
@@ -300,8 +321,8 @@ ul.media-nav {
 
 .media-item {
 	margin: 0 5px 20px 5px;
-	width: 200px;
-	height: 200px;
+	width: 330px;
+	height: 330px;
 	display: inline-block;
 	padding-bottom: 35px;
 	text-align: center;
@@ -312,8 +333,8 @@ ul.media-nav {
 }
 	.media-thumb {
 		margin: 0 auto;
-		height: 180px;
-		width: 180px;
+		height: 320px;
+		width: 320px;
 		padding: 5px;
 		border-radius: 5px;
 		position: relative;
@@ -752,4 +773,14 @@ body ul.ui-widget-content {
 /*  Trying to override dashicons-trash icon which is broken in latest wordpress update (3.8.1) */
 #media-library .selected-delete .dashicons-trash:before {
 	content: "\f182";
+}
+/* Media Grid Title */
+#grid-title {
+	position: absolute;
+	//display: none;
+	top: 0px;
+	left: 50px;
+	background: #d3d3d3;
+	padding: 3px 10px 10px;
+	border-radius: 5px 5px 0 0;
 }

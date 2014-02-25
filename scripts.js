@@ -59,7 +59,7 @@ sel=0;  //initializes check all
 				}
 				// If Tag search is active than call pd_custom_header for query and paging
 				if(tagSlug) {
-					$('.media-grid').find('#ajax-foundAttach').remove(); //for all items update
+					$('#media-library').find('#ajax-foundAttach').remove(); //for all items update
 					$.post(pdAjax.ajaxurl,
 					{
 						action : 'pd_custom_header',
@@ -132,7 +132,8 @@ sel=0;  //initializes check all
 			
 			//----------------------------------------------------------------------------- end search input
 			
-			//Initial Display viewable items count
+			//Initial Display total & viewable items count
+			wpMediaGrid.totalCount();
 			wpMediaGrid.viewCount();
 			
 			//Toggle Select all viewable items
@@ -298,7 +299,7 @@ sel=0;  //initializes check all
 					}
 				});
 				//Open menu when input is selected
-				$('#media-library #media-grid-search').focus(function(event) {
+				$('body #media-grid-search').focus(function(event) {
 					if($('.dashicons-tag').hasClass('active')) {
 						$(this).autocomplete('search', '');
 					}
@@ -321,7 +322,7 @@ sel=0;  //initializes check all
 							// global var
 							tagSlug = myTag;
 							overlay.appendTo($('.media-grid').attr('display', 'block'));
-							$('.media-grid').find('#ajax-foundAttach').remove();
+							$('#media-library').find('#ajax-foundAttach').remove();
 							//Actually send it!
 							$.post( pdAjax.ajaxurl,
 							{
@@ -332,8 +333,14 @@ sel=0;  //initializes check all
 								//send nonce along with everything else
 								customDeleteNonce : pdAjax.customDeleteNonce
 							}).done(function( data ) {
+								var myTitle = $('.media-grid').find('#grid-title');
 								if(data) {
 									$( '.media-grid li' ).remove();
+									if(myTitle.length > 0){
+										$( '#grid-title' ).fadeOut(function(){ $(this).remove(); });
+									}
+									//add Media Tag title to gird
+									wpMediaGrid.addTagTitle(ui.item.value);
 									$( '.media-grid' ).append( data );
 									wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
 									wpMediaGrid.totalCount();
@@ -347,7 +354,7 @@ sel=0;  //initializes check all
 									mySearch = null;
 								}
 							}).fail(function(error) {
-								alert('We are sorry. Something went wrong.  Server responded with: ' + error);
+								alert('We are sorry. Something went wrong.  Please try again later.');
 								overlay.remove();
 								wpMediaGrid.disableMedia(null);
 								
@@ -542,17 +549,25 @@ sel=0;  //initializes check all
 		// Total number of items on the page
 		viewCount: function() {
 			var onPage = $('.media-grid .media-item:visible'),
-				displayTotalCount = $( '.media-nav #view-items' );
+				displayViewCount = $( '.media-nav #view-items' );
 			if(onPage) {
-				displayTotalCount.html(onPage.length + ' <span>viewable</span>');
+				displayViewCount.html(onPage.length + ' <span>viewable</span>');
 			}
 		},
 		
 		totalCount: function() {
-			var found = $('#ajax-foundAttach').attr('data-id');
+			var found = $('#ajax-foundAttach').attr('data-id'),
+				displayTotalCount = $('.media-nav #total-items');
+			
 			if(found) {
-				$('#total-items span').html(found);
-			}	
+				displayTotalCount.html('<span class="found">' + found + '</span>total');
+				if(found>25) {
+					console.log('foundAttach: ' + found);
+					$('.media-nav #total-items').addClass('active').on('click', function() {
+						wpMediaGrid.sendForAll(true);
+					});
+				}
+			}		
 		},
 		
 		//Select all viewable items on page
@@ -647,18 +662,20 @@ sel=0;  //initializes check all
 		},
 		
 		//Ajax request for all media items
-		sendForAll: function() {
+		sendForAll: function(paged) {
 			var overlay = $('<div id="media-overlay"></div>');
 			overlay.appendTo($('.media-grid').attr('display', 'block'));
 			tagSlug = null;
-			$('.media-grid').find('#ajax-foundAttach').remove();
+			$('#media-library').find('#ajax-foundAttach').remove();
 			$.post( pdAjax.ajaxurl,
 			{
 				action : 'pd_all_items',
+				paged: 'paged',
 				customDeleteNonce : pdAjax.customDeleteNonce
 			}).done(function(data) {
+				$('#grid-title').fadeOut(function(){ $(this).remove(); });
 				$( '.media-grid li' ).remove();
-				$( '.media-grid' ).append( data );
+				$( '.media-grid' ).delay(3000).append( data );
 				wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
 				wpMediaGrid.totalCount();
 				wpMediaGrid.viewCount();
@@ -670,6 +687,10 @@ sel=0;  //initializes check all
 				//only if we are doing a live search
 				if($('.dashicons-visibility').hasClass('active')) {
 					wpMediaGrid.initLiveSearch();
+				}
+				if(paged) {
+				console.log('total items should be OFF!');
+					$('.media-nav #total-items').removeClass('active').off('click');
 				}
 			}).fail(function(response) {
 				alert("We're sorry but there seems to be something wrong with the server. Please try again later.");
@@ -697,6 +718,14 @@ sel=0;  //initializes check all
 				$('#media-library').on('click', '.dashicons-visibility', wpMediaGrid.tagSearchIcon);
 				$('.media-select-all').on('click', 'input[type=checkbox]',wpMediaGrid.toggleSelectAll);
 				$('#media-grid-search').activity(false);
+			}
+		},
+		
+		//Add the Media tag that we searched for as title to the grid
+		addTagTitle: function(tt) {
+			//var myTitle = $('.media-grid').find('#grid-title');
+			if(tt) {
+				$('.media-grid').prepend('<div id="grid-title">' + tt + '</div>');
 			}
 		}
 	}

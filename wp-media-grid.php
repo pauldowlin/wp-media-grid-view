@@ -191,18 +191,19 @@ class WP_Media_Grid {
 				</li>
 				<li class="live-search">
 					<input type="search" id="media-grid-search" placeholder="Search viewable media&hellip;">
-				</li>
-				<li class="media-select-all"><input type="checkbox" name="media-select-all" value=""><span>Check All</span></li>
-				<li id="total-view-items">
-					<div id="total-items"><?php 
-						$found = $items->found_posts;
-						echo  '<span class="found">' . $found . '</span>'; ?>total</div>
+					<div id="total-items"></div>
 					<div id="view-items"></div>
 				</li>
+				<li class="media-select-all"><input type="checkbox" name="media-select-all" value=""><span>Check All</span></li>
 			</ul>
-			<ol class="media-grid">
-				<?php self::renderMediaItems( $items->posts ); ?>
-			</ol>
+			<?php //wrap media-grid to add space to label the grid for tag filtering/searching ?>
+			<div id="mgwrap">
+				<ol class="media-grid">
+					<?php self::renderMediaItems( $items->posts ); ?>
+				</ol>
+				<?php //add our total item count ?>
+				<div id="ajax-foundAttach" data-id="<?php echo $items->found_posts ?>"></div>
+			</div>
 			<div id="add-media">
 				<p>Drop media here to upload, or <button>Browse</button> your computer.</p>				
 			</div>
@@ -313,6 +314,7 @@ class WP_Media_Grid {
 						<dt class="mm-filepath">File Path</dt>
 						<dd class="mm-filepath"><input type="text" value="<?php echo $item->guid; ?>"></dd>
 
+						
 						<?php if ( isset($related_post) ): ?>
 						<dt>Related Post</dt>
 						<dd><a href="<?php echo get_edit_post_link( $related_post->ID ); ?>"><?php echo $related_post->post_title; ?></a></dd>
@@ -473,9 +475,15 @@ function pd_custom_header() {
 add_action('wp_ajax_pd_custom_header', 'pd_custom_header');
 function pd_all_items() {
 	$nonce = $_POST['customDeleteNonce'];
+	$paged = $_POST['paged'];
 	//Checking nonce
 	if(!wp_verify_nonce($nonce, 'pdajax-custom-delete-nonce')) {
 		die('Not allowed here!');
+	}
+	if($paged) {
+		$paged = -1;
+	}else {
+		$paged = 25;
 	}
 	//Only if user has sufficient permissions
 	if(current_user_can( 'edit_posts' )) {
@@ -483,7 +491,7 @@ function pd_all_items() {
 		$args = array(
 			'post_type' => 'attachment',
 			'post_status' => 'inherit',
-			'posts_per_page' => 25,
+			'posts_per_page' => $paged,
 			'paged' => 1,
 			'post_mime_type' => 'image'
 			
@@ -497,7 +505,10 @@ function pd_all_items() {
 		 * to begin with this?
 		 * My solution is to return a hidden div that jquery then looks for to update the total # of items
 		 */
-		echo '<div id="ajax-foundAttach" data-id="' . $items->found_posts . '"></div>';
+		$found_posts = $items->found_posts;
+		if($found_posts > '0') {
+			echo '<div id="ajax-foundAttach" data-id="' . $found_posts . '"></div>';
+		}
 	}
 	die();
 }
