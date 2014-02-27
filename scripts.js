@@ -259,7 +259,7 @@ sel=0;  //initializes check all
 						var filtered_and_sorted_list =  $.map(source, function(item){
 							var score = item['value'].toLowerCase().score(request.term.toLowerCase());
 							if(score > 0)
-								return { 'value': item['value'], 'slug': item['slug'], 'rank': score }
+								return { 'value': item['value'], 'slug': item['slug'], 'taxonomy': item['taxonomy'], 'rank': score };
 						}).sort(function(a, b){ return b.rank - a.rank });
 						if(filtered_and_sorted_list.length>0){
 							response(filtered_and_sorted_list);
@@ -316,6 +316,7 @@ sel=0;  //initializes check all
 					//send call via Ajax for new media items based on tags
 					var mediaTagSearch = $('.live-search .dashicons-tag'),
 						myTag = ui.item.slug;
+						myTax = ui.item.taxonomy;
 					if(mediaTagSearch.hasClass('active')) {
 						if(myTag) {
 							var overlay = $('<div id="media-overlay"></div>');
@@ -330,6 +331,7 @@ sel=0;  //initializes check all
 								action : 'pd_custom_header',
 								//add parameters
 								tagSlug : myTag,
+								taxonomy : myTax,
 								//send nonce along with everything else
 								customDeleteNonce : pdAjax.customDeleteNonce
 							}).done(function( data ) {

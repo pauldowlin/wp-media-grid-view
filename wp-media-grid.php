@@ -271,7 +271,7 @@ class WP_Media_Grid {
 				<div class="media-thumb">
 					<?php echo $thumb; ?>
 				</div>
-				<?php // Reinstating media options popup ?>
+				<?php // Reinstating media options pop-up ?>
 				<ul class="media-options">
 						<li class="media-select"><input type="checkbox" name="media[]" value="<?php echo $item->ID ?>"></li>
 						<li><a class="media-edit" href="<?php echo admin_url( 'post.php?post=' . $item->ID . '&action=edit' ) ?>" title="Edit Details"><span>Edit</span></a></li>
@@ -314,6 +314,53 @@ class WP_Media_Grid {
 						<dt class="mm-filepath">File Path</dt>
 						<dd class="mm-filepath"><input type="text" value="<?php echo $item->guid; ?>"></dd>
 
+						<?php 
+						//Media tags and categories - aren't they the same? ;-)
+							$pd_tags = get_taxonomies(array(), 'objects');
+							$pd_taxonomies = array();
+							// get array of taxonomies
+							foreach($pd_tags as $pd_tag){
+								foreach($pd_tag->object_type as $object_type){
+									if('attachment' == $object_type || 0 === strpos($object_type, 'attachment:') || 'media-tags' == $object_type) {
+										$pd_taxonomies[] = array($object_type, $pd_tag->name);
+									}
+								}
+								
+							}
+							foreach($pd_taxonomies as $pd_tax){
+								$pd_terms = get_the_terms( $item->ID, $pd_tax[1] );
+
+								if ( $pd_terms && !is_wp_error($pd_terms)){
+									$pd_category_array = array();
+									$pd_tag_array = array();
+									foreach ( $pd_terms as $term ) {
+										// check for either category or categories
+										if(strpos($term->taxonomy, 'categor')){
+											$pd_category_array[] = $term->name;
+										}else{
+											$pd_tag_array[] = $term->name; 
+										}
+									}
+									//create headings if array has stuff and populate
+									if($pd_category_array){
+										//echo '<p><b>Category</b></p>';
+										?><dt>Media Category</dt><?php
+										foreach($pd_category_array as $pd_cat){
+											//echo '<p>'.$pd_cat.'</p>';
+											?><dd><?php echo $pd_cat ?></dd><?php
+										}
+									}
+									if($pd_tag_array){
+										//echo '<p><b>Tag</b></p>';
+										?><dt>Media Tag</dt><?php
+										foreach($pd_tag_array as $pd_tag){
+											//echo '<p>'.$pd_tag.'</p>';
+											?><dd><?php echo $pd_tag ?></dd><?php
+										}
+									}
+								}
+							}
+							?>
 						
 						<?php if ( isset($related_post) ): ?>
 						<dt>Related Post</dt>
@@ -351,21 +398,31 @@ class WP_Media_Grid {
 	 */
 	public function enqueue() {
 		// redo wp-media-grid enqueueing so we can localize with our variables
-		// First lets find out if we are dealing with Enhanced Library plugin or Media Tags plugin
-		if(is_plugin_active('media-tags/media_tags.php')){
-			$pd_taxonomy = 'media-tags';
-		} else {
-			$pd_taxonomy = 'post_tag';
+		$pd_enq_tax_holder = get_taxonomies(array(), 'objects');
+		$pd_enq_taxonomies = array();
+		// get array of taxonomies
+		foreach($pd_enq_tax_holder as $pd_enq_tax){
+			foreach($pd_enq_tax->object_type as $object_type){
+				if('attachment' == $object_type || 0 === strpos($object_type, 'attachment:') || 'media-tags' == $object_type) {
+					$pd_enq_taxonomies[] = array($object_type, $pd_enq_tax->name);
+				}
+			}
 		}
-		$terms = get_terms($pd_taxonomy);
-		// Now place both label and slug into array to be passed to jQuery on page load 
-		foreach($terms as $term) {
-			$tmp = array();
-			//array_push($tmp, $term->slug, $term->name); 
-			$tmp['slug'] = $term->slug;
-			$tmp['value'] = $term->name;
-			$tagsList[] = $tmp;
-			
+		
+		// Now place both label, slug and taxonomy into array to be passed to jQuery on page load 
+		$pd_enq_terms_array = array();
+		foreach($pd_enq_taxonomies as $pd_enq_tax){
+			$pd_enq_terms = get_terms( $pd_enq_tax[1] );
+
+			if ( $pd_enq_terms && !is_wp_error($pd_enq_terms)){
+				$tmp = array();
+				foreach ( $pd_enq_terms as $term ) {
+					$tmp['taxonomy'] = $term->taxonomy;
+					$tmp['slug'] = $term->slug;
+					$tmp['value'] = $term->name; 
+					$pd_enq_terms_array[] = $tmp;
+				}
+			}
 		}
 		wp_register_script( 'wp-media-grid', plugins_url( 'scripts.js', __FILE__ ), array( 'jquery' ) );
 		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'), 'tagsList' => $tagsList));
@@ -433,15 +490,10 @@ function pd_custom_header() {
 	//Only if user has sufficient permissions
 	if(current_user_can( 'edit_posts' )) {
 		$tagSlug = $_POST['tagSlug'];
+		$pd_taxonomy = $_POST['taxonomy'];
 		$next_page = (int) $_POST['next_page'];
 		if(!$next_page){
 			$next_page = 1;
-		}
-		//find the taxonomy term to use
-		if(is_plugin_active('media-tags/media_tags.php')){
-			$pd_taxonomy = 'media-tags';
-		} else {
-			$pd_taxonomy = 'post_tag';
 		}
 		//set the args
 		$args = array(
