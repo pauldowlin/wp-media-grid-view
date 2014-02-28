@@ -31,24 +31,50 @@ body.blurred #media-library .media-grid {
 
 #media-library ul.media-nav li.media-select-all {
 	float: right;
-	margin: 5px 15px 0 5px;
 	width: 7em;
 }
+#media-library .media-nav .dashicons{
+	margin: 0;
+	vertical-align: middle;
+	position: absolute;
+		top: -15px;
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+}
+	#media-library .dashicons.dashicons-visibility {
+		right: 10px;
+	}
+	#media-library .dashicons.dashicons-tag {
+		right: 35px;
+	}
+	#media-library .dashicons.dashicons-search {
+		right: 60px;
+	}
 #total-view-items  {
-	padding: 10px 0 0 0;
 }
 #total-items {
-	float: left;
+	position: absolute;
+	top: 30px;
+	right: 85px;
 	color: #999;
 	font-size: 10px;
+	line-height: normal;
 }
 #total-items span {
 	font-size: 13px;
 	margin-right: 2px;
 }
+#total-items.active {
+	cursor: pointer;
+	color: #0074a2;
+}
 #view-items {
-	float: left;
+	position: absolute;
+	top: 30px;
+	right: 10px;
 	color: #999;
+	line-height: normal;
 }
 #view-items span{
 	font-size: 10px;
@@ -77,20 +103,18 @@ body.blurred #media-library .media-grid {
 		top: -2px;
 }
 
-
-
 ul.media-nav {
-	/*
-	position: absolute;
-		top: 0;
-		right: 0;
-	*/	
-	overflow: hidden;
-	margin: 0
+	//overflow: hidden;
+	margin: 0;
+	height: 30px;
+	position: relative;
 }
 	ul.media-nav li {
 		display: inline-block;
+		vertical-align: middle;
+		line-height: 30px;
 		margin-right: 10px;
+		margin-bottom: 0;
 	}
 	ul.media-nav li:last-child {
 		margin: 0 0 0 35px;
@@ -118,16 +142,34 @@ ul.media-nav {
 
 .live-search {
 	float: right;
-	margin-right: 10px;
-}
+	vertical-align: middle;
+	line-height: 30px;
+	position: relative;
+	}
+	.live-search a {
+		color: #ccc;
+		cursor: pointer;
+	}
+	.live-search a.active {
+		color: #2ea2cc;
+
+	}
 
 .more-media {
 	visibility: hidden;
 }
 
+#mgwrap{
+	margin: 10px 0 200px 0;
+	position: relative;
+	padding: 2em 0 0 0;
+}
 .media-grid {
-	margin: 30px 0 200px 0;
 	list-style: none;
+	//position: relative;
+	background: #d3d3d3;
+	border-radius: 4px;
+	margin: 0;
 }
 .media-grid:after {
 	content: ".";
@@ -138,6 +180,9 @@ ul.media-nav {
 	height: 0;
 }
 
+.media-grid ol {
+	margin-left: .5em;
+}
 #add-media {
 	display: none;
 	width: 222px;
@@ -276,8 +321,8 @@ ul.media-nav {
 
 .media-item {
 	margin: 0 5px 20px 5px;
-	width: 200px;
-	height: 200px;
+	width: 330px;
+	height: 330px;
 	display: inline-block;
 	padding-bottom: 35px;
 	text-align: center;
@@ -288,8 +333,8 @@ ul.media-nav {
 }
 	.media-thumb {
 		margin: 0 auto;
-		height: 180px;
-		width: 180px;
+		height: 320px;
+		width: 320px;
 		padding: 5px;
 		border-radius: 5px;
 		position: relative;
@@ -689,10 +734,11 @@ dd.photo-uploader {
 		.star-rating .star b {
 			display: none;
 		}
+
 #media-overlay {
-	position: fixed;
-    top: 200px;
-    left: 180px;
+	position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     background-color: #fff;
@@ -700,13 +746,41 @@ dd.photo-uploader {
     -moz-opacity:0.5;
     -khtml-opacity: 0.5;
     opacity: 0.5;
-    z-index: 10000;
+    z-index: 100;
 }
 body #media-library #message {
 	display: none;
 	margin: 5px 0 30px;
 }
+/* Autocomplete styling */
+html body ul.ui-autocomplete{
+	background-color: #e3ebbc;
+	padding: 5px;
+	border-radius: 5px;
+}
+body .ui-autocomplete li a.ui-state-focus {
+	background: #c1ce84;
+	cursor: pointer;
+	border:  none;
+	color: inherit;
+	font-weight: normal;
+}
+body ul.ui-widget-content {
+	border: none;
+	background: transparent none 0% 0% repeat;
+	color: inherit;
+}
 /*  Trying to override dashicons-trash icon which is broken in latest wordpress update (3.8.1) */
 #media-library .selected-delete .dashicons-trash:before {
 	content: "\f182";
+}
+/* Media Grid Title */
+#grid-title {
+	position: absolute;
+	//display: none;
+	top: 0px;
+	left: 50px;
+	background: #d3d3d3;
+	padding: 3px 10px 10px;
+	border-radius: 5px 5px 0 0;
 }

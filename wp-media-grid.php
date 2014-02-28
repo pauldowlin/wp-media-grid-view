@@ -159,7 +159,7 @@ class WP_Media_Grid {
 		 */
 		?>
 		<div id="message" class="updated"></div>
-		
+
 		<div id="media-library" class="wrap">
 			<h2>Media Library
 				<?php if ( current_user_can( 'upload_files' ) ) { ?>
@@ -192,21 +192,20 @@ class WP_Media_Grid {
 					<input type="text" data-slider="true" data-slider-step="0.1" data-slider-snap="false" value="1" data-slider-range="0.8,2.2">
 				</li>
 				<li class="live-search">
-					<input type="search" placeholder="Search viewable media&hellip;">
-				</li>
-				<li class="media-select-all"><input type="checkbox" name="media-select-all" value=""><span>Check All</span></li>
-				<li id="total-view-items">
-					<div id="total-items"><?php 
-						$found = $items->found_posts;
-						echo  '<span class="found">' . $found . '</span>'; if($found==1){?>item<?php }else{ ?>items<?php } ?></div>
+					<input type="search" id="media-grid-search" placeholder="Search viewable media&hellip;">
+					<div id="total-items"></div>
 					<div id="view-items"></div>
 				</li>
+				<li class="media-select-all"><input type="checkbox" name="media-select-all" value=""><span>Check All</span></li>
 			</ul>
-
-			<ol class="media-grid">
-				<?php self::renderMediaItems( $items->posts ); ?>
-			</ol>
-
+			<?php //wrap media-grid to add space to label the grid for tag filtering/searching ?>
+			<div id="mgwrap">
+				<ol class="media-grid">
+					<?php self::renderMediaItems( $items->posts ); ?>
+				</ol>
+				<?php //add our total item count ?>
+				<div id="ajax-foundAttach" data-id="<?php echo $items->found_posts ?>"></div>
+			</div>
 			<div id="add-media">
 				<p>Drop media here to upload, or <button>Browse</button> your computer.</p>				
 			</div>
@@ -214,11 +213,9 @@ class WP_Media_Grid {
 				<div class="selected-meta">
 					<h2 class="selected-count"><strong>0</strong> items selected / &nbsp;&nbsp;&nbsp;Actions:</h2>
 					<ul class="selected-media-options inactive">
-						<li><a class="selected-delete" href="#"><div class="dashicons dashicons-trash"></div></a></li>
-						<li><a class="selected-tag" href="#"><div class="dashicons dashicons-tag"></div></a></li>
+						<li><a class="selected-delete" title="Delete selected items" href="#"><div class="dashicons dashicons-trash"></div></a></li>
+						<li><a class="selected-tag" title="Tag selected items" href="#"><div class="dashicons dashicons-tag"></div></a></li>
 						<li><a class="selected-unselect" href="#"><button type="button" title="Clear selection" class="bttn_clear_all">Clear selection</button></a></li>
-
-
 					</ul>
 				</div>
 				<?php /* save for later?
@@ -254,8 +251,8 @@ class WP_Media_Grid {
 	}
 
 	public function renderMediaItems( $items ) {
-		foreach ( $items as $item) : ?>
-			<?php
+		foreach ( $items as $item) : 
+			
 				switch ($item->post_mime_type) {
 					case 'image/jpeg':
 					case 'image/png':
@@ -276,7 +273,7 @@ class WP_Media_Grid {
 				<div class="media-thumb">
 					<?php echo $thumb; ?>
 				</div>
-				<?php // Reinstating media options popup ?>
+				<?php // Reinstating media options pop-up ?>
 				<ul class="media-options">
 						<li class="media-select"><input type="checkbox" name="media[]" value="<?php echo $item->ID ?>"></li>
 						<li><a class="media-edit" href="<?php echo admin_url( 'post.php?post=' . $item->ID . '&action=edit' ) ?>" title="Edit Details"><span>Edit</span></a></li>
@@ -319,6 +316,54 @@ class WP_Media_Grid {
 						<dt class="mm-filepath">File Path</dt>
 						<dd class="mm-filepath"><input type="text" value="<?php echo $item->guid; ?>"></dd>
 
+						<?php 
+						//Media tags and categories - aren't they the same? ;-)
+							$pd_tags = get_taxonomies(array(), 'objects');
+							$pd_taxonomies = array();
+							// get array of taxonomies
+							foreach($pd_tags as $pd_tag){
+								foreach($pd_tag->object_type as $object_type){
+									if('attachment' == $object_type || 0 === strpos($object_type, 'attachment:') || 'media-tags' == $object_type) {
+										$pd_taxonomies[] = array($object_type, $pd_tag->name);
+									}
+								}
+								
+							}
+							foreach($pd_taxonomies as $pd_tax){
+								$pd_terms = get_the_terms( $item->ID, $pd_tax[1] );
+
+								if ( $pd_terms && !is_wp_error($pd_terms)){
+									$pd_category_array = array();
+									$pd_tag_array = array();
+									foreach ( $pd_terms as $term ) {
+										// check for either category or categories
+										if(strpos($term->taxonomy, 'categor')){
+											$pd_category_array[] = $term->name;
+										}else{
+											$pd_tag_array[] = $term->name; 
+										}
+									}
+									//create headings if array has stuff and populate
+									if($pd_category_array){
+										//echo '<p><b>Category</b></p>';
+										?><dt>Media Category</dt><?php
+										foreach($pd_category_array as $pd_cat){
+											//echo '<p>'.$pd_cat.'</p>';
+											?><dd><?php echo $pd_cat ?></dd><?php
+										}
+									}
+									if($pd_tag_array){
+										//echo '<p><b>Tag</b></p>';
+										?><dt>Media Tag</dt><?php
+										foreach($pd_tag_array as $pd_tag){
+											//echo '<p>'.$pd_tag.'</p>';
+											?><dd><?php echo $pd_tag ?></dd><?php
+										}
+									}
+								}
+							}
+							?>
+						
 						<?php if ( isset($related_post) ): ?>
 						<dt>Related Post</dt>
 						<dd><a href="<?php echo get_edit_post_link( $related_post->ID ); ?>"><?php echo $related_post->post_title; ?></a></dd>
@@ -355,16 +400,51 @@ class WP_Media_Grid {
 	 */
 	public function enqueue() {
 		// redo wp-media-grid enqueueing so we can localize with our variables
+		$pd_enq_tax_holder = get_taxonomies(array(), 'objects');
+		$pd_enq_taxonomies = array();
+		// get array of taxonomies
+		foreach($pd_enq_tax_holder as $pd_enq_tax){
+			foreach($pd_enq_tax->object_type as $object_type){
+				if('attachment' == $object_type || 0 === strpos($object_type, 'attachment:') || 'media-tags' == $object_type) {
+					$pd_enq_taxonomies[] = array($object_type, $pd_enq_tax->name);
+				}
+			}
+		}
+		
+		// Now place both label, slug and taxonomy into array to be passed to jQuery on page load 
+		$pd_enq_terms_array = array();
+		foreach($pd_enq_taxonomies as $pd_enq_tax){
+			$pd_enq_terms = get_terms( $pd_enq_tax[1] );
+
+			if ( $pd_enq_terms && !is_wp_error($pd_enq_terms)){
+				$tmp = array();
+				foreach ( $pd_enq_terms as $term ) {
+					$tmp['taxonomy'] = $term->taxonomy;
+					$tmp['slug'] = $term->slug;
+					$tmp['value'] = $term->name; 
+					$pd_enq_terms_array[] = $tmp;
+				}
+			}
+		}
 		wp_register_script( 'wp-media-grid', plugins_url( 'scripts.js', __FILE__ ), array( 'jquery' ) );
-		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'),));
-		// ----------------------------------------------------------------------
+		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'), 'tagsList' => $tagsList));
+		// -----------------------------------------------------------------------------------------------
 		wp_enqueue_script( 'wp-media-grid');
 		wp_enqueue_style( 'wp-media-grid', plugins_url( 'styles.css', __FILE__ ) );
 
 		wp_enqueue_script( 'media-size-slider', plugins_url( 'libs/simple-slider.min.js', __FILE__ ) );
 		wp_enqueue_style( 'media-size-slider', plugins_url( 'libs/simple-slider.css', __FILE__ ) );
 
-		wp_enqueue_script( 'live-filter', plugins_url( 'libs/jquery.liveFilter.js', __FILE__ ) );
+		wp_enqueue_script( 'live-filter', plugins_url( 'libs/jquery.liveFilter.js', __FILE__ ), array( 'jquery' ) );
+		
+		// Filter our results with score
+		wp_enqueue_script( 'qs-score', plugins_url( 'libs/qs_score.js', __FILE__ ), array( 'jquery' ) );
+		
+		//Make us spin!!
+		wp_enqueue_script( 'activity-indicator', plugins_url('libs/activity/jquery.activity-indicator.min.js', __FILE__), array( 'jquery' ) );
+		
+		//Jquery AutoComplete
+		wp_enqueue_script('jquery-ui-autocomplete');
 	}
 	
 	
@@ -403,7 +483,7 @@ function pd_custom_delete() {
 	die();
 }
 add_action('wp_ajax_pd_custom_delete', 'pd_custom_delete');
-function pd_all_items() {
+function pd_custom_header() {
 	$nonce = $_POST['customDeleteNonce'];
 	//Checking nonce
 	if(!wp_verify_nonce($nonce, 'pdajax-custom-delete-nonce')) {
@@ -411,18 +491,78 @@ function pd_all_items() {
 	}
 	//Only if user has sufficient permissions
 	if(current_user_can( 'edit_posts' )) {
+		$tagSlug = $_POST['tagSlug'];
+		$pd_taxonomy = $_POST['taxonomy'];
+		$next_page = (int) $_POST['next_page'];
+		if(!$next_page){
+			$next_page = 1;
+		}
+		//set the args
+		$args = array(
+			'post_type' => 'attachment',
+			'tax_query' => array(
+					array(
+							'taxonomy' => $pd_taxonomy,
+							'field' => 'slug',
+							'terms' => $tagSlug
+					)
+			),
+			'post_status' => 'inherit',
+			'posts_per_page' => 25,
+			'paged' => $next_page,
+			'post_mime_type' => 'image'
+			
+		);
+		$items = new WP_Query( $args );
+		WP_Media_Grid::renderMediaItems( $items->posts );
+		/**
+		 *  I don't understand this one:  If I try to include a variable, for total number of items
+		 * returned from query, it throws an error.  If I try to json_encode renderMediaItems it 
+		 * throws an error.  I think renderMediaItems is the culprit but I don't really know where 
+		 * to begin with this?
+		 * My solution is to return a hidden div that jquery then looks for to update the total # of items
+		 */
+		echo '<div id="ajax-foundAttach" data-id="' . $items->found_posts . '"></div>';
+	}
+	die();
+}
+add_action('wp_ajax_pd_custom_header', 'pd_custom_header');
+function pd_all_items() {
+	$nonce = $_POST['customDeleteNonce'];
+	$paged = $_POST['paged'];
+	//Checking nonce
+	if(!wp_verify_nonce($nonce, 'pdajax-custom-delete-nonce')) {
+		die('Not allowed here!');
+	}
+	if($paged) {
+		$paged = -1;
+	}else {
+		$paged = 25;
+	}
+	//Only if user has sufficient permissions
+	if(current_user_can( 'edit_posts' )) {
 		//set the args
 		$args = array(
 			'post_type' => 'attachment',
 			'post_status' => 'inherit',
-			'posts_per_page' => 25,
+			'posts_per_page' => $paged,
 			'paged' => 1,
 			'post_mime_type' => 'image'
 			
 		);
 		$items = new WP_Query( $args );
 		WP_Media_Grid::renderMediaItems( $items->posts );
-		//echo $items;
+		/**
+		 *  I don't understand this one:  If I try to include a variable, for total number of items
+		 * returned from query, it throws an error.  If I try to json_encode renderMediaItems it 
+		 * throws an error.  I think renderMediaItems is the culprit but I don't really know where 
+		 * to begin with this?
+		 * My solution is to return a hidden div that jquery then looks for to update the total # of items
+		 */
+		$found_posts = $items->found_posts;
+		if($found_posts > '0') {
+			echo '<div id="ajax-foundAttach" data-id="' . $found_posts . '"></div>';
+		}
 	}
 	die();
 }

@@ -1,5 +1,9 @@
 var wpMediaGrid;
 var timeoutId;
+var tagSlug;
+var filter;
+mySearch=true;  //tells search box we reset the query
+sel=0;  //initializes check all
 
 (function($) {
 	wpMediaGrid = {
@@ -19,30 +23,69 @@ var timeoutId;
 				filter = $( '.media-nav' ).data( 'filter' );
 				tag = $( '.media-nav' ).data( 'tag' );
 				link.addClass( 'loading' ).html( 'Loading more items&hellip;' );
-
-				$.get( url, {
-					media_action: 'more',
-					next_page: next_page,
-					filter: filter,
-					tag: tag
-				} ).done( function(data) {
-					if ( data ) {
-						$( '.media-grid' ).append( data );
-						wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
-						link.attr( 'href', next_page.toString() );
-						link.removeClass( 'loading' ).html('Get moar!');
-					} else {
-						link.remove();
-					}
-					wpMediaGrid.initLiveSearch();
-					wpMediaGrid.viewCount();
-					if(  $('.media-select-all input').is(":checked") ) {
-						if( confirm( 'Select next page worth of items?' ) ) {
-							wpMediaGrid.toggleSelectAll();
+				//Default ajax action
+				// ** Just sayin' -
+				// - shouldn't we be using $.Post then send to admin-ajax.php with nonce?
+				
+				// For now just test to see if Tag search is on and if so, skip
+				if(!tagSlug) {
+					$.get( url, {
+						media_action: 'more',
+						next_page: next_page,
+						filter: filter,
+						tag: tag
+					} ).done( function(data) {
+						if ( data ) {
+							$( '.media-grid' ).append( data );
+							wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
+							link.attr( 'href', next_page.toString() );
+							link.removeClass( 'loading' ).html('Get moar!');
+						} else {
+							// Don't remove!  We need that link later on
+							//link.remove();
 						}
-					}
+						// added double check to see if tags search is still on
+						if(!$('.live-search').hasClass('active')) {
+							wpMediaGrid.initLiveSearch();
+						}
+						wpMediaGrid.viewCount();
+						if(  $('.media-select-all input').is(":checked") ) {
+							if( confirm( 'Select next page worth of items?' ) ) {
+								wpMediaGrid.toggleSelectAll();
+							}
+						}
+						
+					});
+				}
+				// If Tag search is active than call pd_custom_header for query and paging
+				if(tagSlug) {
+					$('#media-library').find('#ajax-foundAttach').remove(); //for all items update
+					$.post(pdAjax.ajaxurl,
+					{
+						action : 'pd_custom_header',
+						//parameters
+						tagSlug : tagSlug,
+						next_page : next_page,
+						customDeleteNonce : pdAjax.customDeleteNonce
+					}).done(function(data) {
+						if(data) {
+							$( '.media-grid' ).append( data );
+							wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
+							link.attr( 'href', next_page.toString() );
+							link.removeClass( 'loading' ).html('Get moar!');
+						} else {
+							//Don't remove!  We need that link later on
+							//link.remove();
+						}
+						wpMediaGrid.viewCount();
+						if(  $('.media-select-all input').is(":checked") ) {
+							if( confirm( 'Select next page worth of items?' ) ) {
+								wpMediaGrid.toggleSelectAll();
+							}
+						}
+					});
 					
-				});
+				}
 			});
 
 			// Inifite Scroll
@@ -61,18 +104,43 @@ var timeoutId;
 			// Keyboard Nav
 			wpMediaGrid.initKeyboardNav();
 
+			/*
+			 * Search Input controls and functionality
+			 *
+			 *     Live Search of viewable items, Media Tags Search, Full search of all items
+			*/
+			 // add controls along top of search box
+			var liveSearchIcon = '<a class="dashicons dashicons-visibility" title="Search visible items"></a>',
+				mediaTagIcon = '<a class="dashicons dashicons-tag" title="Search Media Tags"></a>',
+				fullSearchIcon = '<a class="dashicons dashicons-search" title="Search all items"></a>';
+			$('.live-search').append(liveSearchIcon, mediaTagIcon, fullSearchIcon);
+			
+			//set live search as initial search capability
+			$('.dashicons-visibility').addClass('active');
+			
 			// Live search of viewable items
 			wpMediaGrid.initLiveSearch();
 			
-			//Initial Display viewable items count
+			//Enable Tag search :: disable live and full searches
+			$('.media-nav').on('click', '.dashicons-tag', wpMediaGrid.tagSearchIcon);
+			
+			//Enable Full search :: disable live and tag searches
+			$('.media-nav').on('click', '.dashicons-search', wpMediaGrid.tagSearchIcon);
+			
+			//Enable Live search :: disable tag and full searches
+			$('.media-nav').on('click', '.dashicons-visibility', wpMediaGrid.tagSearchIcon);
+			
+			//----------------------------------------------------------------------------- end search input
+			
+			//Initial Display total & viewable items count
+			wpMediaGrid.totalCount();
 			wpMediaGrid.viewCount();
 			
 			//Toggle Select all viewable items
-			$( '.media-select-all input[type=checkbox]' ).on('click', function() {
-				wpMediaGrid.toggleSelectAll();				
-			});
+			$( '.media-select-all' ).on('click', 'input[type=checkbox]',wpMediaGrid.toggleSelectAll);
+			
 			//Select single item
-			$('.media-select input[type=checkbox]').on('click', function() {
+			$('body').on('click', '.media-select input[type=checkbox]' , function() {
 				var item = $(this).closest( '.media-item' );
 					id = item.data('id'),
 					details = item.find( '.media-details' ),
@@ -97,7 +165,6 @@ var timeoutId;
 			// Unselect All
 			$( '#selected-media-details' ).on( 'click', '.selected-unselect', function(event) {
 				event.preventDefault();
-				
 				$('.media-select-all input[type=checkbox]').removeAttr('checked');
 				wpMediaGrid.toggleSelectAll();
 				count = 0;
@@ -131,9 +198,7 @@ var timeoutId;
 						which = this.className;
 
 					//Now send it out
-					wpMediaGrid.sendDelete(itemId, which);
-					
-					
+					wpMediaGrid.sendDelete(itemId, which);	
 				}
 			});
 			
@@ -152,7 +217,6 @@ var timeoutId;
 					
 					//send it out
 					wpMediaGrid.sendDelete(itemId, which);
-
 				}
 			});
 			
@@ -164,12 +228,182 @@ var timeoutId;
 			} );
 		},
 
-		initLiveSearch: function() {
-			$( '.media-grid' ).liveFilter('.live-search input', 'li', {
-				filterChildSelector: '.media-details'
-			});
+		initLiveSearch: function(filter) {
+			if(!filter) {
+				$( '.media-grid' ).liveFilter('.live-search input', 'li', {
+					filterChildSelector: '.media-details',
+					after: function() {
+						wpMediaGrid.viewCount();
+					}
+				});
+			}else {
+				$( '.media-grid' ).liveFilter('.live-search input','li',{ destroy: true });
+			}
+			
 		},
 
+		initTagSearch: function(pd) {
+			
+			if(!pd){
+				if( $('#media-grid-search').data('ui-autocomplete') ) {
+				$('#media-grid-search').autocomplete('destroy');
+				}
+				$('#media-library').off('input', '#media-grid-search');
+			}else {
+				$('#media-grid-search').autocomplete({
+					minLength: 0,
+					//autoFocus: true,
+					position: {my: 'top', at: 'bottom+10'},
+					source: function(request, response) {
+						var source = pdAjax.tagsList;
+						var filtered_and_sorted_list =  $.map(source, function(item){
+							var score = item['value'].toLowerCase().score(request.term.toLowerCase());
+							if(score > 0)
+								return { 'value': item['value'], 'slug': item['slug'], 'taxonomy': item['taxonomy'], 'rank': score };
+						}).sort(function(a, b){ return b.rank - a.rank });
+						if(filtered_and_sorted_list.length>0){
+							response(filtered_and_sorted_list);
+						}
+					},
+					focus: function(event, ui) {
+						if(ui.item) {
+						$('#media-grid-search').val(ui.item.value);
+						return false;
+						}
+					},
+					change: function(event, ui) {
+						$('#media-grid-search').val('');
+					}
+					
+				});
+				//Pressing enter with empty input resets query back to original
+				// nothing in autocomplete detects enter key with input cleared so...
+				$('#media-library #media-grid-search').on('keyup, keydown', function(e) {
+					var text = $(this).val(),
+						code = e.which;
+					if(code==13 && text==""){
+						if(!mySearch) {
+						wpMediaGrid.sendForAll();
+						$(this).blur();
+						}
+					}
+				});
+				//autofocus only after keypress
+				$('#media-library').on('input', '#media-grid-search',function(e) {
+					console.log('Input check fired: ' + this.value.length);
+					if(this.value.length == 0) {
+					
+						$( this ).autocomplete( "option", "autoFocus", false );
+					}else {
+						$( this ).autocomplete( "option", "autoFocus", true );
+					}
+				});
+				//Open menu when input is selected
+				$('body #media-grid-search').focus(function(event) {
+					if($('.dashicons-tag').hasClass('active')) {
+						$(this).autocomplete('search', '');
+					}
+				});
+				//send it off when user selects 
+				$('#media-library #media-grid-search').on('autocompleteselect', function(event, ui) {
+					//uncheck things before we send ajax
+					if($('.media-select-all input[type=checkbox]').is(':checked')){
+						$('.media-select-all input[type=checkbox]').trigger('click');
+					}
+					wpMediaGrid.toggleSelectAll(true);
+					//disable things so no inadvertant clicking or selecting
+					wpMediaGrid.disableMedia(true);
+					//send call via Ajax for new media items based on tags
+					var mediaTagSearch = $('.live-search .dashicons-tag'),
+						myTag = ui.item.slug;
+						myTax = ui.item.taxonomy;
+					if(mediaTagSearch.hasClass('active')) {
+						if(myTag) {
+							var overlay = $('<div id="media-overlay"></div>');
+							// global var
+							tagSlug = myTag;
+							overlay.appendTo($('.media-grid').attr('display', 'block'));
+							$('#media-library').find('#ajax-foundAttach').remove();
+							//Actually send it!
+							$.post( pdAjax.ajaxurl,
+							{
+								//action
+								action : 'pd_custom_header',
+								//add parameters
+								tagSlug : myTag,
+								taxonomy : myTax,
+								//send nonce along with everything else
+								customDeleteNonce : pdAjax.customDeleteNonce
+							}).done(function( data ) {
+								var myTitle = $('.media-grid').find('#grid-title');
+								if(data) {
+									$( '.media-grid li' ).remove();
+									if(myTitle.length > 0){
+										$( '#grid-title' ).fadeOut(function(){ $(this).remove(); });
+									}
+									//add Media Tag title to gird
+									wpMediaGrid.addTagTitle(ui.item.value);
+									$( '.media-grid' ).append( data );
+									wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
+									wpMediaGrid.totalCount();
+									wpMediaGrid.viewCount();
+									overlay.remove();
+									//revert .more-media link back to href=1
+									$('.more-media').removeClass('loading').attr('href', '1');
+									//enable media library
+									wpMediaGrid.disableMedia(null);
+									//tell search box that we have made a non-live search
+									mySearch = null;
+								}
+							}).fail(function(error) {
+								alert('We are sorry. Something went wrong.  Please try again later.');
+								overlay.remove();
+								wpMediaGrid.disableMedia(null);
+								
+							});
+						}else {
+							//Getting ready for autocomplete so there won't be an else situation
+							console.log('sendAjaxsTags:  No Match!!');
+						}
+			
+					}
+				});
+			}
+		},
+		
+		//When tag icon is clicked activate input to accept tag search
+		tagSearchIcon: function() {
+			$('.live-search').children('.active').removeClass('active');
+			$('.live-search input').val('');
+			//update placeholder and init appropriate searches
+			switch($(this).attr('class')) {
+				case ('dashicons dashicons-tag'):
+					$(this).addClass('active');
+					$('.live-search input').attr('placeholder', 'Search Media Tags');
+					filter = true;
+					wpMediaGrid.initLiveSearch(filter);
+					wpMediaGrid.initTagSearch(true);
+					$('.live-search input').focus();
+					break;
+				case ('dashicons dashicons-search'):
+					$(this).addClass('active');
+					$('.live-search input').attr('placeholder', 'Search All Media');
+					filter = true;
+					wpMediaGrid.initLiveSearch(filter);
+					wpMediaGrid.initTagSearch(null);
+					$('.live-search input').focus();
+					break;
+				case ('dashicons dashicons-visibility'):
+					$(this).addClass('active');
+					$('.live-search input').attr('placeholder', 'Search Viewable Media');
+					filter = null;
+					wpMediaGrid.initLiveSearch(filter);
+					wpMediaGrid.initTagSearch(null);
+					$('.live-search input').focus();
+					break;
+			}
+		},
+		
 		openModal: function( item ) {
 			var modal = $( '#media-modal' ),
 				media_compare = modal.find( '.compare-items' ),
@@ -313,25 +547,35 @@ var timeoutId;
 			}
 			$('#message').fadeIn().delay(6000).fadeOut();
 		},
+
 		// Total number of items on the page
 		viewCount: function() {
 			var onPage = $('.media-grid .media-item:visible'),
-				displayTotalCount = $( '.media-nav #view-items' );
+				displayViewCount = $( '.media-nav #view-items' );
 			if(onPage) {
-				displayTotalCount.html(onPage.length + ' <span>viewable</span>');
+				displayViewCount.html(onPage.length + ' <span>viewable</span>');
 			}
 		},
 		
 		totalCount: function() {
-			var found = $('#total-items span.found').text(),
-				newfound = parseInt(found) - 1;
-			$('#total-items span.found').text(newfound);
+			var found = $('#ajax-foundAttach').attr('data-id'),
+				displayTotalCount = $('.media-nav #total-items');
+			
+			if(found) {
+				displayTotalCount.html('<span class="found">' + found + '</span>total');
+				if(found>25) {
+					console.log('foundAttach: ' + found);
+					$('.media-nav #total-items').addClass('active').on('click', function() {
+						wpMediaGrid.sendForAll(true);
+					});
+				}
+			}		
 		},
 		
 		//Select all viewable items on page
-		toggleSelectAll: function(n) {
+		toggleSelectAll: function() {
 			//Check to see if things are already checked
-			if(  $('.media-select-all input').is(":checked") || n ) {
+			if(  $('.media-select-all input').is(":checked") && !sel) {
 				$( '.media-grid .media-item').each(function() {
 					var id = $(this).data('id'),
 						details = $(this).find( '.media-details' ),
@@ -408,6 +652,8 @@ var timeoutId;
 						count = 0;
 						wpMediaGrid.selectedMediaPopup(count);
 						wpMediaGrid.showUpdate(responseID.length);
+						//this repopulates grid with default query - minus the ones deleted of course
+						//and only called if all media items on the page
 						wpMediaGrid.sendForAll();
 					}
 				}).fail(function(error) {
@@ -417,32 +663,71 @@ var timeoutId;
 		},
 		
 		//Ajax request for all media items
-		sendForAll: function() {
+		sendForAll: function(paged) {
 			var overlay = $('<div id="media-overlay"></div>');
-			overlay.appendTo($('#media-library').attr('display', 'block'));
+			overlay.appendTo($('.media-grid').attr('display', 'block'));
 			tagSlug = null;
+			$('#media-library').find('#ajax-foundAttach').remove();
 			$.post( pdAjax.ajaxurl,
 			{
 				action : 'pd_all_items',
-				
+				paged: 'paged',
 				customDeleteNonce : pdAjax.customDeleteNonce
 			}).done(function(data) {
+				$('#grid-title').fadeOut(function(){ $(this).remove(); });
 				$( '.media-grid li' ).remove();
-				$( '.media-grid' ).append( data );
+				$( '.media-grid' ).delay(3000).append( data );
 				wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
 				wpMediaGrid.totalCount();
 				wpMediaGrid.viewCount();
 				overlay.remove();
 				//revert .more-media link back to href=1
 				$('.more-media').removeClass('loading').attr('href', '1');
-				if(!$('.live-search').hasClass('active')) {
+				//tell search box that we are back to initial search
+				mySearch = true;
+				//only if we are doing a live search
+				if($('.dashicons-visibility').hasClass('active')) {
 					wpMediaGrid.initLiveSearch();
 				}
-			}).fail(function() {
+				if(paged) {
+				console.log('total items should be OFF!');
+					$('.media-nav #total-items').removeClass('active').off('click');
+				}
+			}).fail(function(response) {
 				alert("We're sorry but there seems to be something wrong with the server. Please try again later.");
 				overlay.remove();
 			});
-			
+		},
+		
+		//Disable media library when sending ajax requests
+		disableMedia: function(dM) {
+			if(dM) {
+				$('#media-grid-search').css({opacity: 0.2});
+				$('#media-grid-search').autocomplete('disable');
+				//disable search options
+				$('#media-library').off('click', '.dashicons-tag',wpMediaGrid.tagSearchIcon);
+				$('#media-library').off('click', '.dashicons-search', wpMediaGrid.tagSearchIcon);
+				$('#media-library').off('click', '.dashicons-visibility', wpMediaGrid.tagSearchIcon);
+				//now check-all box
+				$('.media-select-all').off('click', 'input[type=checkbox]',wpMediaGrid.toggleSelectAll);
+				$('#media-grid-search').activity({segments: 8, width: 2, space: 0, length: 3, color: '#d54e21', speed: 1.5, align: 'right', outside: 'true'});
+			}else{
+				$('#media-grid-search').css({opacity: 1.0});
+				$('#media-grid-search').autocomplete('enable');
+				$('#media-library').on('click', '.dashicons-tag',wpMediaGrid.tagSearchIcon);
+				$('#media-library').on('click', '.dashicons-search', wpMediaGrid.tagSearchIcon);
+				$('#media-library').on('click', '.dashicons-visibility', wpMediaGrid.tagSearchIcon);
+				$('.media-select-all').on('click', 'input[type=checkbox]',wpMediaGrid.toggleSelectAll);
+				$('#media-grid-search').activity(false);
+			}
+		},
+		
+		//Add the Media tag that we searched for as title to the grid
+		addTagTitle: function(tt) {
+			//var myTitle = $('.media-grid').find('#grid-title');
+			if(tt) {
+				$('.media-grid').prepend('<div id="grid-title">' + tt + '</div>');
+			}
 		}
 		
 	}
