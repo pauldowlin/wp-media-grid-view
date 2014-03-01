@@ -11,7 +11,8 @@ sel=0;  //initializes check all
 			// Moar media!
 			$( '.more-media' ).on( 'click', function(event) {
 				event.preventDefault();
-				var link = $(this);
+				var link = $(this)
+					scrollOff = $('#media-library .media-grid').hasClass('live-search');
 				if ( link.hasClass( 'loading' ) ) {
 					return;
 				}
@@ -27,8 +28,9 @@ sel=0;  //initializes check all
 				// ** Just sayin' -
 				// - shouldn't we be using $.Post then send to admin-ajax.php with nonce?
 				
-				// For now just test to see if Tag search is on and if so, skip
-				if(!tagSlug) {
+				// For now just test to see if Tag search is on and if we are in the middle of a visible
+				// search (which implies that we don't need to scroll) and skip
+				if(!tagSlug && !scrollOff) {
 					$.get( url, {
 						media_action: 'more',
 						next_page: next_page,
@@ -232,12 +234,31 @@ sel=0;  //initializes check all
 			if(!filter) {
 				$( '.media-grid' ).liveFilter('.live-search input', 'li', {
 					filterChildSelector: '.media-details',
+					before: function() {
+						// Tell infinite scroll to turn off
+						$('#media-library .media-grid').addClass('live-search');
+					},
 					after: function() {
+						var itemHidden = $('.media-grid .media-item:hidden');
 						wpMediaGrid.viewCount();
+						// Turn infinite scroll back on if visible search is cleared
+						if (!itemHidden.length) {	
+							$('#media-library .media-grid').removeClass('live-search');
+						}
 					}
 				});
 			}else {
-				$( '.media-grid' ).liveFilter('.live-search input','li',{ destroy: true });
+				$( '.media-grid' ).liveFilter('.live-search input','li',{ 
+					destroy: true,
+					after: function() {
+						var itemHidden = $('.media-grid .media-item:hidden');
+						wpMediaGrid.viewCount();
+						// Turn infinite scroll back on
+						if (!itemHidden.length) {	
+							$('#media-library .media-grid').removeClass('live-search');
+						}
+					}
+				});
 			}
 			
 		},

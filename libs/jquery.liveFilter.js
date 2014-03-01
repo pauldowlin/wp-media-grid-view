@@ -28,8 +28,14 @@
 			var contains = el.filter(function(){
 				return filter(this, $(inputEl).val());
 			});
+			
+			options.before.call(this, contains);
+			
 			contains.show();
 			$(inputEl).unbind();
+			
+			options.after.call(this, contains);
+			
 			return;
 		}
 		

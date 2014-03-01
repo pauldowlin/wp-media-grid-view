@@ -427,7 +427,7 @@ class WP_Media_Grid {
 			}
 		}
 		wp_register_script( 'wp-media-grid', plugins_url( 'scripts.js', __FILE__ ), array( 'jquery' ) );
-		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'), 'tagsList' => $tagsList));
+		wp_localize_script( 'wp-media-grid', 'pdAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'customDeleteNonce' => wp_create_nonce('pdajax-custom-delete-nonce'), 'tagsList' => $pd_enq_terms_array));
 		// -----------------------------------------------------------------------------------------------
 		wp_enqueue_script( 'wp-media-grid');
 		wp_enqueue_style( 'wp-media-grid', plugins_url( 'styles.css', __FILE__ ) );
