@@ -394,33 +394,42 @@ sel=0;  //initializes check all
 		
 		//When tag icon is clicked activate input to accept tag search
 		tagSearchIcon: function() {
-			$('.live-search').children('.active').removeClass('active');
+			var activeChildren = $('.live-search').children('.active');
 			$('.live-search input').val('');
 			//update placeholder and init appropriate searches
 			switch($(this).attr('class')) {
 				case ('dashicons dashicons-tag'):
-					$(this).addClass('active');
-					$('.live-search input').attr('placeholder', 'Search Media Tags');
-					filter = true;
-					wpMediaGrid.initLiveSearch(filter);
-					wpMediaGrid.initTagSearch(true);
-					$('.live-search input').focus();
+					if(!$(this).hasClass('active')) {
+						activeChildren.removeClass('active');
+						$(this).addClass('active');
+						$('.live-search input').attr('placeholder', 'Search Media Tags');
+						filter = true;
+						wpMediaGrid.initLiveSearch(filter);
+						wpMediaGrid.initTagSearch(true);
+						$('.live-search input').focus();
+					}
 					break;
 				case ('dashicons dashicons-search'):
-					$(this).addClass('active');
-					$('.live-search input').attr('placeholder', 'Search All Media');
-					filter = true;
-					wpMediaGrid.initLiveSearch(filter);
-					wpMediaGrid.initTagSearch(null);
-					$('.live-search input').focus();
+					if(!$(this).hasClass('active')) {
+						activeChildren.removeClass('active');
+						$(this).addClass('active');
+						$('.live-search input').attr('placeholder', 'Search All Media');
+						filter = true;
+						wpMediaGrid.initLiveSearch(filter);
+						wpMediaGrid.initTagSearch(null);
+						$('.live-search input').focus();
+					}
 					break;
 				case ('dashicons dashicons-visibility'):
-					$(this).addClass('active');
-					$('.live-search input').attr('placeholder', 'Search Viewable Media');
-					filter = null;
-					wpMediaGrid.initLiveSearch(filter);
-					wpMediaGrid.initTagSearch(null);
-					$('.live-search input').focus();
+					if(!$(this).hasClass('active')) {
+						activeChildren.removeClass('active');
+						$(this).addClass('active');
+						$('.live-search input').attr('placeholder', 'Search Viewable Media');
+						filter = null;
+						wpMediaGrid.initLiveSearch(filter);
+						wpMediaGrid.initTagSearch(null);
+						$('.live-search input').focus();
+					}
 					break;
 			}
 		},
