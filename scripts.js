@@ -4,6 +4,7 @@ var tagSlug;
 var filter;
 mySearch=true;  //tells search box we reset the query
 sel=0;  //initializes check all
+var onPage; //helps with total count
 
 (function($) {
 	wpMediaGrid = {
@@ -580,10 +581,9 @@ sel=0;  //initializes check all
 
 		// Total number of items on the page
 		viewCount: function() {
-			var onPage = $('.media-grid .media-item:visible'),
-				displayViewCount = $( '.media-nav #view-items' );
+			onPage = $('.media-grid .media-item:visible');
 			if(onPage) {
-				displayViewCount.html(onPage.length + ' <span>viewable</span>');
+				$( '.media-nav #view-items' ).html(onPage.length + ' <span>viewable</span>');
 			}
 		},
 		
@@ -593,11 +593,14 @@ sel=0;  //initializes check all
 			
 			if(found) {
 				displayTotalCount.html('<span class="found">' + found + '</span>total');
-				if(found>25) {
-					console.log('foundAttach: ' + found);
+				console.log('Viewable: ' + onPage.length);
+				if(found>onPage.length) {
 					$('.media-nav #total-items').addClass('active').on('click', function() {
 						wpMediaGrid.sendForAll(true);
 					});
+				}else{
+					console.log('Total equals viewable');
+					$('.media-nav #total-items').removeClass('active').off();
 				}
 			}		
 		},
