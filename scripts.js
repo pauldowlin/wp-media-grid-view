@@ -14,7 +14,7 @@ var onPage; //helps with total count
 			$( '.more-media' ).on( 'click', function(event) {
 				event.preventDefault();
 				var link = $(this)
-					scrollOff = $('#media-library .media-grid').hasClass('live-search');
+					scrollOff = $('#media-library .media-grid').hasClass('live-search-active');
 				if ( link.hasClass( 'loading' ) ) {
 					return;
 				}
@@ -241,7 +241,7 @@ var onPage; //helps with total count
 					filterChildSelector: '.media-details',
 					before: function() {
 						// Tell infinite scroll to turn off
-						$('#media-library .media-grid').addClass('live-search');
+						$('#media-library .media-grid').addClass('live-search-active');
 					},
 					after: function() {
 						var itemHidden = $('.media-grid .media-item:hidden');
