@@ -770,7 +770,11 @@ var onPage; //helps with total count
 		addTagTitle: function(tt) {
 			//var myTitle = $('.media-grid').find('#grid-title');
 			if(tt) {
-				$('.media-grid').prepend('<div id="grid-title">' + tt + '</div>');
+				$('.media-grid').prepend('<div id="grid-title"><div title="Clear Search" class="title-clear dashicons dashicons-dismiss"></div><div class="grid-title-text">' + tt + '</div></div>');
+				$('.title-clear').css('cursor', 'pointer');
+				$('.title-clear').on('click', function() {
+					console.log('Clear Search');
+				});
 			}
 		}
 		

@@ -788,3 +788,14 @@ body ul.ui-widget-content {
 	padding: 3px 10px 10px;
 	border-radius: 5px 5px 0 0;
 }
+#grid-title .dashicons {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	width: 10px;
+	height: 10px;
+	font-size: 10px;
+}
+.grid-title-text {
+	margin-right: 12px;
+}
