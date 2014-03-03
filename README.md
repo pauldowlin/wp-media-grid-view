@@ -10,12 +10,12 @@ Selecting multiple images presents options to delete selected.
 Search box has 3 icons along the top that enable different search options.  From left to right they are:
 
 1. Standard wordpress search on all images (not working yet!)
-2. Search by media tags.  Must have a seperate media tagging plugin (or roll your own) activated.  So far the following list of plugins are known to work.
+2. Search by media tags.  Must have a seperate media tagging plugin (or register your own custom taxonomy and terms) activated.  So far the following list of plugins are known to work.
     - Media Tags by Paul Menard
     - Enhanced Media Library
 3. Live Search of viewable items.  Just start typing and it will search all available media details such as title, file name, tags and categories.
 
-**Note** - Media Library Assistant is not supported as of yet as that plugin doesn't update their terms count in the database so it is difficult to return a list of terms to search on.  Hopefully at some point there will be a fix for this as this plugin is really nice.
+**Note** - Media Library Assistant is not fully supported as of yet as that plugin doesn't update their terms count in the database if images aren't attached to posts so it is difficult to return a full list of terms to search on.  If all your images are attached to posts than you should be fine.  Hopefully at some point there will be a fix for this as this plugin is really nice.
 
 **Hints**
 ==================
