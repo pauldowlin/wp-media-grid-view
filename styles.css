@@ -68,6 +68,10 @@ body.blurred #media-library .media-grid {
 #total-items.active {
 	cursor: pointer;
 	color: #0074a2;
+	padding: 0 3px;
+	padding: 0 .3rem;
+	background: #d3d3d3;
+	border-radius: 5px;
 }
 #view-items {
 	position: absolute;

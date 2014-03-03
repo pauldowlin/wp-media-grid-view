@@ -528,6 +528,8 @@ function pd_custom_header() {
 }
 add_action('wp_ajax_pd_custom_header', 'pd_custom_header');
 function pd_all_items() {
+	$tagSlug = $_POST['tagSlug'];
+	$pd_taxonomy = $_POST['taxonomy'];
 	$nonce = $_POST['customDeleteNonce'];
 	$paged = $_POST['paged'];
 	//Checking nonce
@@ -542,14 +544,33 @@ function pd_all_items() {
 	//Only if user has sufficient permissions
 	if(current_user_can( 'edit_posts' )) {
 		//set the args
-		$args = array(
-			'post_type' => 'attachment',
-			'post_status' => 'inherit',
-			'posts_per_page' => $paged,
-			'paged' => 1,
-			'post_mime_type' => 'image'
-			
-		);
+		if($tagSlug) {
+			//All items within a given tag search
+			$args = array(
+				'post_type' => 'attachment',
+				'tax_query' => array(
+					array(
+							'taxonomy' => $pd_taxonomy,
+							'field' => 'slug',
+							'terms' => $tagSlug
+					)
+				),
+				'post_status' => 'inherit',
+				'posts_per_page' => $paged,
+				'paged' => 1,
+				'post_mime_type' => 'image'
+			);
+		}else{
+			// All items in database
+			$args = array(
+				'post_type' => 'attachment',
+				'post_status' => 'inherit',
+				'posts_per_page' => $paged,
+				'paged' => 1,
+				'post_mime_type' => 'image'
+			);
+		}
+		
 		$items = new WP_Query( $args );
 		WP_Media_Grid::renderMediaItems( $items->posts );
 		/**

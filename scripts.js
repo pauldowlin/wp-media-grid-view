@@ -1,6 +1,7 @@
 var wpMediaGrid;
 var timeoutId;
 var tagSlug;
+var tagTax;
 var filter;
 mySearch=true;  //tells search box we reset the query
 sel=0;  //initializes check all
@@ -52,6 +53,7 @@ var onPage; //helps with total count
 							wpMediaGrid.initLiveSearch();
 						}
 						wpMediaGrid.viewCount();
+						wpMediaGrid.totalCount();
 						if(  $('.media-select-all input').is(":checked") ) {
 							if( confirm( 'Select next page worth of items?' ) ) {
 								wpMediaGrid.toggleSelectAll();
@@ -68,6 +70,7 @@ var onPage; //helps with total count
 						action : 'pd_custom_header',
 						//parameters
 						tagSlug : tagSlug,
+						taxonomy  : tagTax,
 						next_page : next_page,
 						customDeleteNonce : pdAjax.customDeleteNonce
 					}).done(function(data) {
@@ -81,6 +84,7 @@ var onPage; //helps with total count
 							//link.remove();
 						}
 						wpMediaGrid.viewCount();
+						wpMediaGrid.totalCount();
 						if(  $('.media-select-all input').is(":checked") ) {
 							if( confirm( 'Select next page worth of items?' ) ) {
 								wpMediaGrid.toggleSelectAll();
@@ -136,8 +140,8 @@ var onPage; //helps with total count
 			//----------------------------------------------------------------------------- end search input
 			
 			//Initial Display total & viewable items count
-			wpMediaGrid.totalCount();
 			wpMediaGrid.viewCount();
+			wpMediaGrid.totalCount();
 			
 			//Toggle Select all viewable items
 			$( '.media-select-all' ).on('click', 'input[type=checkbox]',wpMediaGrid.toggleSelectAll);
@@ -342,8 +346,9 @@ var onPage; //helps with total count
 					if(mediaTagSearch.hasClass('active')) {
 						if(myTag) {
 							var overlay = $('<div id="media-overlay"></div>');
-							// global var
+							// global vars
 							tagSlug = myTag;
+							tagTax = myTax;
 							overlay.appendTo($('.media-grid').attr('display', 'block'));
 							$('#media-library').find('#ajax-foundAttach').remove();
 							//Actually send it!
@@ -367,8 +372,8 @@ var onPage; //helps with total count
 									wpMediaGrid.addTagTitle(ui.item.value);
 									$( '.media-grid' ).append( data );
 									wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
-									wpMediaGrid.totalCount();
 									wpMediaGrid.viewCount();
+									wpMediaGrid.totalCount();
 									overlay.remove();
 									//revert .more-media link back to href=1
 									$('.more-media').removeClass('loading').attr('href', '1');
@@ -395,7 +400,7 @@ var onPage; //helps with total count
 		
 		//When tag icon is clicked activate input to accept tag search
 		tagSearchIcon: function() {
-			var activeChildren = $('.live-search').children('.active');
+			var activeChildren = $('.live-search a.active');
 			$('.live-search input').val('');
 			//update placeholder and init appropriate searches
 			switch($(this).attr('class')) {
@@ -593,13 +598,11 @@ var onPage; //helps with total count
 			
 			if(found) {
 				displayTotalCount.html('<span class="found">' + found + '</span>total');
-				console.log('Viewable: ' + onPage.length);
 				if(found>onPage.length) {
-					$('.media-nav #total-items').addClass('active').on('click', function() {
+					$('#total-items').addClass('active').on('click', function() {
 						wpMediaGrid.sendForAll(true);
 					});
 				}else{
-					console.log('Total equals viewable');
 					$('.media-nav #total-items').removeClass('active').off();
 				}
 			}		
@@ -699,32 +702,40 @@ var onPage; //helps with total count
 		sendForAll: function(paged) {
 			var overlay = $('<div id="media-overlay"></div>');
 			overlay.appendTo($('.media-grid').attr('display', 'block'));
-			tagSlug = null;
+			if(!paged){
+				tagSlug=null;
+				tagTax=null;
+			}
 			$('#media-library').find('#ajax-foundAttach').remove();
 			$.post( pdAjax.ajaxurl,
 			{
 				action : 'pd_all_items',
-				paged: 'paged',
+				tagSlug : tagSlug,
+				taxonomy : tagTax,
+				paged: paged,
 				customDeleteNonce : pdAjax.customDeleteNonce
 			}).done(function(data) {
 				$('#grid-title').fadeOut(function(){ $(this).remove(); });
 				$( '.media-grid li' ).remove();
 				$( '.media-grid' ).delay(3000).append( data );
 				wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
-				wpMediaGrid.totalCount();
 				wpMediaGrid.viewCount();
+				wpMediaGrid.totalCount();
 				overlay.remove();
 				//revert .more-media link back to href=1
 				$('.more-media').removeClass('loading').attr('href', '1');
 				//tell search box that we are back to initial search
-				mySearch = true;
+				if(!paged){
+					mySearch = true;
+				}
 				//only if we are doing a live search
 				if($('.dashicons-visibility').hasClass('active')) {
 					wpMediaGrid.initLiveSearch();
 				}
 				if(paged) {
-				console.log('total items should be OFF!');
 					$('.media-nav #total-items').removeClass('active').off('click');
+					tagSlug=null;
+					tagTax=null;
 				}
 			}).fail(function(response) {
 				alert("We're sorry but there seems to be something wrong with the server. Please try again later.");
