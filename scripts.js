@@ -140,6 +140,9 @@ var onPage; //helps with total count
 			//----------------------------------------------------------------------------- end search input
 			
 			//Initial Display total & viewable items count
+			$('#media-library').on('click', '#total-items',function() {
+						wpMediaGrid.sendForAll(true);
+			});
 			wpMediaGrid.viewCount();
 			wpMediaGrid.totalCount();
 			
@@ -350,7 +353,9 @@ var onPage; //helps with total count
 							tagSlug = myTag;
 							tagTax = myTax;
 							overlay.appendTo($('.media-grid').attr('display', 'block'));
-							$('#media-library').find('#ajax-foundAttach').remove();
+							$('#ajax-foundAttach').each(function(){
+								$(this).remove();
+							});
 							//Actually send it!
 							$.post( pdAjax.ajaxurl,
 							{
@@ -599,11 +604,11 @@ var onPage; //helps with total count
 			if(found) {
 				displayTotalCount.html('<span class="found">' + found + '</span>total');
 				if(found>onPage.length) {
-					$('#total-items').addClass('active').on('click', function() {
-						wpMediaGrid.sendForAll(true);
-					});
+					$('#total-items').addClass('active');
 				}else{
-					$('.media-nav #total-items').removeClass('active').off();
+					$('#media-library').off('click', '#total-items', function(){
+						$(this).removeClass('active');
+					});
 				}
 			}		
 		},
@@ -706,7 +711,9 @@ var onPage; //helps with total count
 				tagSlug=null;
 				tagTax=null;
 			}
-			$('#media-library').find('#ajax-foundAttach').remove();
+			$('#ajax-foundAttach').each(function(){
+				$(this).remove();
+			});
 			$.post( pdAjax.ajaxurl,
 			{
 				action : 'pd_all_items',
@@ -715,7 +722,9 @@ var onPage; //helps with total count
 				paged: paged,
 				customDeleteNonce : pdAjax.customDeleteNonce
 			}).done(function(data) {
-				$('#grid-title').fadeOut(function(){ $(this).remove(); });
+				if(!paged){
+					$('#grid-title').fadeOut(function(){ $(this).remove(); });
+				}
 				$( '.media-grid li' ).remove();
 				$( '.media-grid' ).delay(3000).append( data );
 				wpMediaGrid.changeThumbSize( $( '.thumbnail-size input' ).val() );
@@ -734,9 +743,11 @@ var onPage; //helps with total count
 				}
 				if(paged) {
 					$('.media-nav #total-items').removeClass('active').off('click');
+					wpMediaGrid.addTagTitle();
 					tagSlug=null;
 					tagTax=null;
 				}
+				paged=null;
 			}).fail(function(response) {
 				alert("We're sorry but there seems to be something wrong with the server. Please try again later.");
 				overlay.remove();
@@ -768,14 +779,13 @@ var onPage; //helps with total count
 		
 		//Add the Media tag that we searched for as title to the grid
 		addTagTitle: function(tt) {
-			//var myTitle = $('.media-grid').find('#grid-title');
 			if(tt) {
 				$('.media-grid').prepend('<div id="grid-title"><div title="Clear Search" class="title-clear dashicons dashicons-dismiss"></div><div class="grid-title-text">' + tt + '</div></div>');
-				$('.title-clear').css('cursor', 'pointer');
-				$('.title-clear').on('click', function() {
-					console.log('Clear Search');
-				});
+				$('.title-clear').css('cursor', 'pointer');	
 			}
+			$('.title-clear').on('click', function() {
+					wpMediaGrid.sendForAll();
+				});
 		}
 		
 	}
